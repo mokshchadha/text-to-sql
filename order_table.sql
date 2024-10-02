@@ -25,7 +25,7 @@ CREATE TABLE order_table (
   transport_address TEXT, -- address that is shared with the transporter vendor for delivery
   is_eway_bill_created BOOLEAN, -- is eway bill created or no
   buyer_po_number VARCHAR(100), -- buyer po number
-  delivery_buyer_payment_terms VARCHAR(255), -- DO NOT USE THIS 
+  delivery_buyer_payment_terms VARCHAR(255), -- TODO:
   eway_bill_expiry_date DATE, -- date on which eway bill will get expired 
   delay_score INTEGER DEFAULT 0, -- delay score, no delay means 0 delay days
   logistic_delay_score INTEGER DEFAULT 0, -- logistic delay score can be minimum of -1 
@@ -59,7 +59,7 @@ CREATE TABLE order_table (
   updated_at TIMESTAMP, -- order updated at time 
   invoice_status VARCHAR(50)), -- status of invoice , can be paid or unpaid or void
   invoice_value DECIMAL(10, 2), -- total cost on the invoice 
-  invoice_due_days INTEGER,  -- DO NOT USE THIS 
+  invoice_due_days INTEGER,  -- TODO:
   invoice_balance DECIMAL(10, 2), -- Pending amount due against the buyer's invoice
   overdue_amount DECIMAL(10, 2), -- Over due of the buyer invoice -- //TODO:
   adjusted_system_distance INTEGER, -- system distance in kms later adjusted DO NOT USE IT
@@ -167,46 +167,46 @@ CREATE TABLE order_table (
   second_note TEXT, -- second note for the buyer 
   credit_order DECIMAL(10, 2), -- credit associated with the order TODO:
   lifetime_volume DECIMAL(10, 2), -- lifetime volume of the buyer group associated with this order
-  liquidity_buyer_type VARCHAR(50),
-  outreach_buyer_type VARCHAR(50),
-  days_passed INTEGER,
-  days_passed_label VARCHAR(50),
-  opportunity TEXT,
-  volume_supplied DECIMAL(10, 2),
-  supplier_activated BOOLEAN,
-  liquidity_type VARCHAR(50),
-  liquidity_buyer_type_attrition_slab VARCHAR(50),
-  finance_update_count INTEGER,
-  email_id_count INTEGER,
-  parent_child_available BOOLEAN,
-  ceo BOOLEAN,
-  coo BOOLEAN,
-  dm_owner BOOLEAN,
-  dm_purchase_manager BOOLEAN,
-  finance BOOLEAN,
-  gst VARCHAR(15),
-  logistics BOOLEAN,
-  md BOOLEAN,
-  owner BOOLEAN,
-  purchase_head BOOLEAN,
-  purchase_manager BOOLEAN,
-  sales_manager BOOLEAN,
-  undefined_role BOOLEAN,
-  tam VARCHAR(100),
-  tag_category VARCHAR(50),
-  buyer_decision_maker_person VARCHAR(100),
-  buyer_decision_maker_email VARCHAR(100),
-  ordered_grade_number VARCHAR(50),
-  ordered_grade_group VARCHAR(50),
-  pan VARCHAR(10),
-  total_mapped_qty DECIMAL(10, 2),
+  liquidity_buyer_type VARCHAR(50), -- type of buyer either he is attrition buyer or regular buyer FIXME: can be refactored
+  outreach_buyer_type VARCHAR(50), -- type of buyer either he is attrition buyer or regular buyer FIXME: can be refactored
+  days_passed INTEGER,  -- how many days have passed since this order TODO:
+  days_passed_label VARCHAR(50), -- label given to days passed 
+  opportunity TEXT, -- type of business opportunity with the buyer 
+  volume_supplied DECIMAL(10, 2), -- total volume supplied by the supplier 
+  is_supplier_activated BOOLEAN, -- is supplier activated or not 
+  liquidity_type VARCHAR(255), -- type of liquidity that the buyer has 
+  liquidity_buyer_type_attrition_slab VARCHAR(50), -- type of liquidity slap FIXME:
+  finance_update_count INTEGER, -- number of times the finance updated TODO:
+  email_id_count INTEGER, -- TODO:
+  is_parent_child BOOLEAN, -- is the order a parent child order or not TODO:
+  ceo INTEGER, -- TODO:
+  coo INTEGER, -- TODO:
+  dm_owner INTEGER, -- TODO:
+  dm_purchase_manager INTEGER, -- TODO:
+  finance INTEGER, -- TODO:
+  gst INTEGER, -- TODO: why is this an integer?
+  logistics INTEGER, -- this is an integer why ? TODO:
+  md INTEGER, -- TODO: this is an integer why?
+  owner INTEGER, -- TODO: this is an integer why?
+  purchase_head INTEGER,-- TODO: this is an integer why?
+  purchase_manager INTEGER,-- TODO: this is an integer why?
+  sales_manager INTEGER, -- TODO: this is an integer why?
+  undefined_role INTEGER, -- TODO: this is an integer why?
+  tam VARCHAR(100), -- 
+  tag_category VARCHAR(50), -- category of tag can be 
+  buyer_decision_maker_person VARCHAR(100), -- name of the person who makes decision for buyer group
+  buyer_decision_maker_email VARCHAR(100),-- email of the person who makes decision for buyer group
+  ordered_grade_number VARCHAR(50), -- grade number that was ordered in this order
+  ordered_grade_group VARCHAR(50), -- grade group that was ordered in this order
+  pan VARCHAR(10), -- pan card of the associated buyer 
+  total_mapped_qty DECIMAL(10, 2), -- TODO:
   last_6mnt_lowest_not_adjusted DECIMAL(10, 2),
   last_6mnt_lowest_not_adjusted_order_no VARCHAR(50),
   last_6mnt_lowest_adjusted DECIMAL(10, 2),
   last_6mnt_lowest_adjusted_order_no VARCHAR(50),
-  warehouse_parent_name VARCHAR(100),
+  godown_parent_name VARCHAR(100), -- name of the parent location of the godown location 
   destination_parent_name VARCHAR(100),
-  app_live_price DECIMAL(10, 2),
+  app_live_price DECIMAL(10, 2), -- live price on buyer app of the selected grade during the time of purchase
   l1_supplier_name VARCHAR(100),
   l1_netback DECIMAL(10, 2),
   l2_supplier_name VARCHAR(100),
@@ -233,3 +233,94 @@ CREATE INDEX idx_status ON order_table(status);
 CREATE INDEX idx_dispatch_date ON order_table(dispatch_date);
 CREATE INDEX idx_due_date ON order_table(due_date);
 CREATE INDEX idx_created_at ON order_table(created_at);
+
+-- gin indexes with pgtgrm 
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE INDEX idx_gin_supplier_name ON order_table USING gin (supplier_name gin_trgm_ops);
+CREATE INDEX idx_gin_buyer_name ON order_table USING gin (buyer_name gin_trgm_ops);
+CREATE INDEX idx_gin_godown_name ON order_table USING gin (godown_name gin_trgm_ops);
+CREATE INDEX idx_gin_product_name ON order_table USING gin (product_name gin_trgm_ops);
+CREATE INDEX idx_gin_delivery_location_name ON order_table USING gin (delivery_location_name gin_trgm_ops);
+CREATE INDEX idx_gin_delivery_address ON order_table USING gin (delivery_address gin_trgm_ops);
+CREATE INDEX idx_gin_transport_address ON order_table USING gin (transport_address gin_trgm_ops);
+CREATE INDEX idx_gin_buyer_po_number ON order_table USING gin (buyer_po_number gin_trgm_ops);
+CREATE INDEX idx_gin_delivery_buyer_payment_terms ON order_table USING gin (delivery_buyer_payment_terms gin_trgm_ops);
+CREATE INDEX idx_gin_transporter_name ON order_table USING gin (transporter_name gin_trgm_ops);
+CREATE INDEX idx_gin_invoice_number ON order_table USING gin (invoice_number gin_trgm_ops);
+CREATE INDEX idx_gin_bill_number ON order_table USING gin (bill_number gin_trgm_ops);
+CREATE INDEX idx_gin_purchase_order_number ON order_table USING gin (purchase_order_number gin_trgm_ops);
+CREATE INDEX idx_gin_utr_number ON order_table USING gin (utr_number gin_trgm_ops);
+CREATE INDEX idx_gin_rejection_reason ON order_table USING gin (rejection_reason gin_trgm_ops);
+CREATE INDEX idx_gin_reapply_reason ON order_table USING gin (reapply_reason gin_trgm_ops);
+CREATE INDEX idx_gin_pod_reason ON order_table USING gin (pod_reason gin_trgm_ops);
+CREATE INDEX idx_gin_bill_reason ON order_table USING gin (bill_reason gin_trgm_ops);
+CREATE INDEX idx_gin_lr_reason ON order_table USING gin (lr_reason gin_trgm_ops);
+CREATE INDEX idx_gin_pod_remark ON order_table USING gin (pod_remark gin_trgm_ops);
+CREATE INDEX idx_gin_bill_remark ON order_table USING gin (bill_remark gin_trgm_ops);
+CREATE INDEX idx_gin_lr_remark ON order_table USING gin (lr_remark gin_trgm_ops);
+CREATE INDEX idx_gin_driver_coordinator_name ON order_table USING gin (driver_coordinator_name gin_trgm_ops);
+CREATE INDEX idx_gin_transport_region ON order_table USING gin (transport_region gin_trgm_ops);
+CREATE INDEX idx_gin_group_state_owner ON order_table USING gin (group_state_owner gin_trgm_ops);
+CREATE INDEX idx_gin_buyer_account_manager ON order_table USING gin (buyer_account_manager gin_trgm_ops);
+CREATE INDEX idx_gin_supplier_account_manager ON order_table USING gin (supplier_account_manager gin_trgm_ops);
+CREATE INDEX idx_gin_buyer_poc_name ON order_table USING gin (buyer_poc_name gin_trgm_ops);
+CREATE INDEX idx_gin_supplier_poc_name ON order_table USING gin (supplier_poc_name gin_trgm_ops);
+CREATE INDEX idx_gin_tags ON order_table USING gin (tags gin_trgm_ops);
+CREATE INDEX idx_gin_loading_address ON order_table USING gin (loading_address gin_trgm_ops);
+CREATE INDEX idx_gin_delivered_to_with_parent ON order_table USING gin (delivered_to_with_parent gin_trgm_ops);
+CREATE INDEX idx_gin_godown_with_parent ON order_table USING gin (godown_with_parent gin_trgm_ops);
+CREATE INDEX idx_gin_logistic_team_remarks_concatenated ON order_table USING gin (logistic_team_remarks_concatenated gin_trgm_ops);
+CREATE INDEX idx_gin_buyer_team_remarks_concatenated ON order_table USING gin (buyer_team_remarks_concatenated gin_trgm_ops);
+CREATE INDEX idx_gin_supplier_team_remarks_concatenated ON order_table USING gin (supplier_team_remarks_concatenated gin_trgm_ops);
+CREATE INDEX idx_gin_general_remarks_concatenated ON order_table USING gin (general_remarks_concatenated gin_trgm_ops);
+CREATE INDEX idx_gin_driver_remarks_concatenated ON order_table USING gin (driver_remarks_concatenated gin_trgm_ops);
+CREATE INDEX idx_gin_buyer_delivery_terms ON order_table USING gin (buyer_delivery_terms gin_trgm_ops);
+CREATE INDEX idx_gin_group_name ON order_table USING gin (group_name gin_trgm_ops);
+CREATE INDEX idx_gin_group_business_type ON order_table USING gin (group_business_type gin_trgm_ops);
+CREATE INDEX idx_gin_group_credit_tenor ON order_table USING gin (group_credit_tenor gin_trgm_ops);
+CREATE INDEX idx_gin_group_remarks ON order_table USING gin (group_remarks gin_trgm_ops);
+CREATE INDEX idx_gin_highest_gst_slab ON order_table USING gin (highest_gst_slab gin_trgm_ops);
+CREATE INDEX idx_gin_account_manager ON order_table USING gin (account_manager gin_trgm_ops);
+CREATE INDEX idx_gin_business_units ON order_table USING gin (business_units gin_trgm_ops);
+CREATE INDEX idx_gin_group_payment_category ON order_table USING gin (group_payment_category gin_trgm_ops);
+CREATE INDEX idx_gin_group_trade_reference_values ON order_table USING gin (group_trade_reference_values gin_trgm_ops);
+CREATE INDEX idx_gin_application_type ON order_table USING gin (application_type gin_trgm_ops);
+CREATE INDEX idx_gin_group_primary_location ON order_table USING gin (group_primary_location gin_trgm_ops);
+CREATE INDEX idx_gin_supplier_payment_terms ON order_table USING gin (supplier_payment_terms gin_trgm_ops);
+CREATE INDEX idx_gin_order_priority ON order_table USING gin (order_priority gin_trgm_ops);
+CREATE INDEX idx_gin_pfp_status ON order_table USING gin (pfp_status gin_trgm_ops);
+CREATE INDEX idx_gin_regions ON order_table USING gin (regions gin_trgm_ops);
+CREATE INDEX idx_gin_group_level_grade_groups ON order_table USING gin (group_level_grade_groups gin_trgm_ops);
+CREATE INDEX idx_gin_group_level_tags ON order_table USING gin (group_level_tags gin_trgm_ops);
+CREATE INDEX idx_gin_group_hsns ON order_table USING gin (group_hsns gin_trgm_ops);
+CREATE INDEX idx_gin_active_locations ON order_table USING gin (active_locations gin_trgm_ops);
+CREATE INDEX idx_gin_inactive_locations ON order_table USING gin (inactive_locations gin_trgm_ops);
+CREATE INDEX idx_gin_waba_status ON order_table USING gin (waba_status gin_trgm_ops);
+CREATE INDEX idx_gin_group_price_receipt ON order_table USING gin (group_price_receipt gin_trgm_ops);
+CREATE INDEX idx_gin_buyer_decision_maker ON order_table USING gin (buyer_decision_maker gin_trgm_ops);
+CREATE INDEX idx_gin_created_by ON order_table USING gin (created_by gin_trgm_ops);
+CREATE INDEX idx_gin_correspondence_range ON order_table USING gin (correspondence_range gin_trgm_ops);
+CREATE INDEX idx_gin_first_note ON order_table USING gin (first_note gin_trgm_ops);
+CREATE INDEX idx_gin_second_note ON order_table USING gin (second_note gin_trgm_ops);
+CREATE INDEX idx_gin_liquidity_buyer_type ON order_table USING gin (liquidity_buyer_type gin_trgm_ops);
+CREATE INDEX idx_gin_outreach_buyer_type ON order_table USING gin (outreach_buyer_type gin_trgm_ops);
+CREATE INDEX idx_gin_days_passed_label ON order_table USING gin (days_passed_label gin_trgm_ops);
+CREATE INDEX idx_gin_opportunity ON order_table USING gin (opportunity gin_trgm_ops);
+CREATE INDEX idx_gin_liquidity_type ON order_table USING gin (liquidity_type gin_trgm_ops);
+CREATE INDEX idx_gin_liquidity_buyer_type_attrition_slab ON order_table USING gin (liquidity_buyer_type_attrition_slab gin_trgm_ops);
+CREATE INDEX idx_gin_tam ON order_table USING gin (tam gin_trgm_ops);
+CREATE INDEX idx_gin_tag_category ON order_table USING gin (tag_category gin_trgm_ops);
+CREATE INDEX idx_gin_buyer_decision_maker_person ON order_table USING gin (buyer_decision_maker_person gin_trgm_ops);
+CREATE INDEX idx_gin_buyer_decision_maker_email ON order_table USING gin (buyer_decision_maker_email gin_trgm_ops);
+CREATE INDEX idx_gin_ordered_grade_number ON order_table USING gin (ordered_grade_number gin_trgm_ops);
+CREATE INDEX idx_gin_ordered_grade_group ON order_table USING gin (ordered_grade_group gin_trgm_ops);
+CREATE INDEX idx_gin_godown_parent_name ON order_table USING gin (godown_parent_name gin_trgm_ops);
+CREATE INDEX idx_gin_destination_parent_name ON order_table USING gin (destination_parent_name gin_trgm_ops);
+CREATE INDEX idx_gin_l1_supplier_name ON order_table USING gin (l1_supplier_name gin_trgm_ops);
+CREATE INDEX idx_gin_l2_supplier_name ON order_table USING gin (l2_supplier_name gin_trgm_ops);
+CREATE INDEX idx_gin_l3_supplier_name ON order_table USING gin (l3_supplier_name gin_trgm_ops);
+CREATE INDEX idx_gin_probable_supplier_group_name ON order_table USING gin (probable_supplier_group_name gin_trgm_ops);
+CREATE INDEX idx_gin_availability ON order_table USING gin (availability gin_trgm_ops);
+CREATE INDEX idx_gin_buyer_type ON order_table USING gin (buyer_type gin_trgm_ops);
+CREATE INDEX idx_gin_order_created_by ON order_table USING gin (order_created_by gin_trgm_ops);
