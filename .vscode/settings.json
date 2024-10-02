@@ -1,3 +1,10 @@
 {
-    "workbench.colorTheme": "Gopher Theme Color"
+    "workbench.colorTheme": "Theme Darker",
+    "cSpell.words": [
+        "dgft",
+        "eway",
+        "hsns",
+        "netback",
+        "waba"
+    ]
 }
