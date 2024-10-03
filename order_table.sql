@@ -57,7 +57,7 @@ CREATE TABLE order_table (
   applied_for_freight_payment_at TIMESTAMP,
   created_at TIMESTAMP, -- order created at time
   updated_at TIMESTAMP, -- order updated at time 
-  invoice_status VARCHAR(50)), -- status of invoice , can be paid or unpaid or void
+  invoice_status VARCHAR(50), -- status of invoice , can be paid or unpaid or void
   invoice_value DECIMAL(10, 2), -- total cost on the invoice 
   invoice_due_days INTEGER,  -- TODO:
   invoice_balance DECIMAL(10, 2), -- Pending amount due against the buyer's invoice
@@ -226,10 +226,10 @@ CREATE TABLE order_table (
 );
 
 CREATE INDEX idx_order_number ON order_table(order_number);
-CREATE INDEX idx_supplier_id ON order_table(supplier_id);
-CREATE INDEX idx_buyer_id ON order_table(buyer_id);
+CREATE INDEX idx_supplier_gst ON order_table(supplier_gst);
+CREATE INDEX idx_buyer_gst ON order_table(buyer_gst);
 CREATE INDEX idx_product_id ON order_table(product_id);
-CREATE INDEX idx_status ON order_table(status);
+CREATE INDEX idx_status ON order_table(order_status);
 CREATE INDEX idx_dispatch_date ON order_table(dispatch_date);
 CREATE INDEX idx_due_date ON order_table(due_date);
 CREATE INDEX idx_created_at ON order_table(created_at);
