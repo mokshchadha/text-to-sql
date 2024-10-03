@@ -22,7 +22,7 @@ CREATE TABLE order_table (
   order_status VARCHAR(50) NOT NULL , -- status of order
   buyer_payment_terms VARCHAR(100), -- payment terms opted by the buyer for paying 
   delivery_address TEXT, -- complete delivery address for the order
-  transport_address TEXT, -- address that is shared with the transporter vendor for delivery
+  transporter_address TEXT, -- address that is shared with the transporter vendor for delivery
   is_eway_bill_created BOOLEAN, -- is eway bill created or no
   buyer_po_number VARCHAR(100), -- buyer po number
   delivery_buyer_payment_terms VARCHAR(255), -- TODO:
@@ -243,7 +243,7 @@ CREATE INDEX idx_gin_godown_name ON order_table USING gin (godown_name gin_trgm_
 CREATE INDEX idx_gin_product_name ON order_table USING gin (product_name gin_trgm_ops);
 CREATE INDEX idx_gin_delivery_location_name ON order_table USING gin (delivery_location_name gin_trgm_ops);
 CREATE INDEX idx_gin_delivery_address ON order_table USING gin (delivery_address gin_trgm_ops);
-CREATE INDEX idx_gin_transport_address ON order_table USING gin (transport_address gin_trgm_ops);
+CREATE INDEX idx_gin_transport_address ON order_table USING gin (transporter_address gin_trgm_ops);
 CREATE INDEX idx_gin_buyer_po_number ON order_table USING gin (buyer_po_number gin_trgm_ops);
 CREATE INDEX idx_gin_delivery_buyer_payment_terms ON order_table USING gin (delivery_buyer_payment_terms gin_trgm_ops);
 CREATE INDEX idx_gin_transporter_name ON order_table USING gin (transporter_name gin_trgm_ops);

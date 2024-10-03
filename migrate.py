@@ -1,7 +1,10 @@
 import csv
 import psycopg2
 from psycopg2 import sql
-from psycopg2 import datetime
+import datetime
+import json
+import math
+import sys
 
 COLUMN_MAPPING = {
     'id': '_id',
@@ -15,8 +18,8 @@ COLUMN_MAPPING = {
     'single_quantity': 'singlequantity',
     'product_id': 'productid',
     'product_name': 'productname',
-    'delivered_to_id': 'deliveredtoid',
-    'delivered_to_name': 'deliveredto',
+    'delivery_location_id': 'deliveredtoid',
+    'delivery_location_name': 'deliveredto',
     'dispatch_date': 'dispatchdate',
     'due_date': 'duedate',
     'buyer_due_date': 'buyerduedate',
@@ -31,8 +34,8 @@ COLUMN_MAPPING = {
     'buyer_po_number': 'buyerponumber',
     'delivery_buyer_payment_terms': 'deliverybuyerpaymentterms',
     'eway_bill_expiry_date': 'ewaybillexpirydate',
-    'delay_days': 'delay',
-    'logistic_delay_days': 'logisticdelay',
+    'delay_score': 'delay',
+    'logistic_delay_score': 'logisticdelay',
     'lr_number': 'lrno',
     'driver_mobile_number': 'drivermobileno',
     'transporter_name': 'transporter',
@@ -52,7 +55,7 @@ COLUMN_MAPPING = {
     'margin': 'margin',
     'total_amount': 'amount',
     'utr_number': 'utrno',
-    'payment_made_to_supplier': 'paymentmadetosupplier',
+    'is_payment_made_to_supplier': 'paymentmadetosupplier',
     'freight_payment_application_status': 'freightpaymentapplicationstatus',
     'freight_bill_status': 'freightbillstatus',
     'freight_pod_status': 'freightpodstatus',
@@ -91,8 +94,8 @@ COLUMN_MAPPING = {
     'loading_address': 'loadingwholeaddress',
     'vehicle_number': 'vehicleno',
     'delivered_to_with_parent': 'deliveredtowithparent',
-    'warehouse_with_parent': 'godownwithparent',
-    'created_at_date': 'createdatdate',
+    'godown_with_parent': 'godownwithparent',
+    'created_at': 'createdatdate',
     'netback': 'netback',
     'buyer_group_id': 'buyergroupid',
     'supplier_group_id': 'suppliergroupid',
@@ -156,8 +159,8 @@ COLUMN_MAPPING = {
     'group_level_grade_groups': 'grouplevelgradegroups',
     'group_level_tags': 'groupleveltags',
     'group_hsns': 'grouphsns',
-    'active_location': 'active_location',
-    'inactive_location': 'inactive_location',
+    'active_locations': 'active_location',
+    'inactive_locations': 'inactive_location',
     'waba_status': 'wabastatus',
     'group_price_receipt': 'grouppricereceipt',
     'decision_maker_mapped': 'decisonmakermapped', #either YES or NO, need to map to boolean 
@@ -231,75 +234,156 @@ COLUMN_MAPPING = {
 }
 
 
-csv_file_path = 'orders_table.csv'
+csv_file_path = 'small_table.csv'
 
 
 db_params = {
-    'host': 'your_host',
-    'database': 'your_database',
-    'user': 'your_username',
-    'password': 'your_password'
+    'host': 'localhost',
+    'database': 'mydb',
+    'user': 'myuser',
+    'password': 'mypassword',
+    'port':'5444'
 }
 
- 
+
+
 def convert_to_postgres_type(value, column_name):
-    if value == '':
+    if value in ['', 'N/A', 'NA', 'null', 'NULL', 'None', '0.0']:
         return None
-    if column_name.endswith('_date') or column_name in ['createdat', 'updatedat', 'appliedforfreightpaymentat']:
+    
+    # Special handling for dispatch_date
+    if column_name == 'dispatch_date':
+        try:
+            return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f').date()
+        except ValueError:
+            try:
+                return datetime.datetime.strptime(value, '%Y-%m-%d').date()
+            except ValueError:
+                raise ValueError(f"Invalid date format for column {column_name}: {value}")
+    
+    # Special handling for due_date
+    if column_name == 'due_date' or column_name == 'buyer_due_date':
+        try:
+            return datetime.datetime.strptime(value, '%d/%m/%Y').date()
+        except ValueError:
+            try:
+                return datetime.datetime.strptime(value, '%Y-%m-%d').date()
+            except ValueError:
+                raise ValueError(f"Invalid date format for column {column_name}: {value}")
+    
+    # Other date conversions
+    if column_name.endswith('_date') or column_name in ['buyer_due_date', 'expected_delivery_date', 'actual_delivery_date', 'supplier_due_date', 'eway_bill_expiry_date', 'max_dispatch_date', 'min_dispatch_date', 'last_ordered_date', 'group_creation_date', 'last_correspondence_date']:
         try:
             return datetime.datetime.strptime(value, '%Y-%m-%d').date()
         except ValueError:
-            return None
-    if column_name in ['delay', 'logisticdelay', 'freightquotescount', 'orderscount', 'supplierorderscount']:
+            raise ValueError(f"Invalid date format for column {column_name}: {value}")
+    
+    # Timestamp conversions
+    if column_name in ['applied_for_freight_payment_at', 'created_at', 'updated_at', 'change_time']:
         try:
-            return int(value)
+            timestamp = float(value)
+            if timestamp > 0:
+                return datetime.datetime.fromtimestamp(timestamp)
+            else:
+                return None
         except ValueError:
-            return None
-    if column_name in ['freight', 'lastfreight', 'systemfreight', 'maxpossiblefreight', 'suppliercreditnotevalue',
-                       'buyerprice', 'buyercreditnotevalue', 'supplierprice', 'amount', 'invoicevalue', 'invoicebalance',
-                       'overdueamount', 'adjustedsystemdistance', 'netback', 'netbacksf', 'freight_offset']:
+            raise ValueError(f"Invalid timestamp for column {column_name}: {value}")
+    
+    # Integer conversions
+    if column_name in ['delay_days', 'logistic_delay_days', 'freight_quotes_count', 'orders_count', 'supplier_orders_count', 'last_order_days_ago', 'group_unfulfilled_order_count', 'last_buyer_app_usage_days_ago', 'listings_deactivation_timer', 'repeat_reminders_after', 'finance_update_count', 'email_id_count', 'days_passed', 'ceo', 'coo', 'dm_owner', 'dm_purchase_manager', 'finance', 'gst', 'logistics', 'md', 'owner', 'purchase_head', 'purchase_manager', 'sales_manager', 'undefined_role']:
+        try:
+            return int(float(value))
+        except ValueError:
+            raise ValueError(f"Invalid integer for column {column_name}: {value}")
+    
+    # Float conversions
+    if column_name in ['single_quantity', 'quantity', 'freight_cost', 'last_freight_cost', 'system_freight_cost', 'max_possible_freight_cost', 'supplier_credit_note_value', 'buyer_price', 'buyer_credit_note_value', 'supplier_price', 'margin', 'total_amount', 'invoice_value', 'invoice_balance', 'overdue_amount', 'adjusted_system_distance', 'netback', 'netback_sf', 'freight_offset', 'group_limit', 'group_credit_interest', 'group_credit_limit', 'group_markup_value', 'group_margin', 'credit_order', 'lifetime_volume', 'volume_supplied', 'dgft_import', 'dgft_import_mapped', 'total_mapped_qty', 'last_6mnt_lowest_not_adjusted', 'last_6mnt_lowest_adjusted', 'app_live_price', 'l1_netback', 'l2_netback', 'l3_netback', 'freight_quotes_l1', 'freight_quotes_l2', 'freight_quotes_l3']:
         try:
             return float(value)
         except ValueError:
-            return None
-    if column_name in ['isewaybillcreated', 'isreturn', 'isdeleted', 'coarequired', 'mobileappenabled',
-                       'specialofferenabled', 'dgft_import', 'dgft_import_mapped', 'parent_child_available']:
-        return value.lower() == 'true'
+            raise ValueError(f"Invalid float for column {column_name}: {value}")
+    
+    if column_name == 'transit_distance_in_km':
+        try:
+            return float(value.replace("km", "").strip())
+        except ValueError:
+            raise ValueError(f"Invalid float for column {column_name}: {value}")
+    
+    # Boolean conversions
+    if column_name in ['is_eway_bill_created', 'is_return', 'group_blacklisted', 'group_waba_price_enabled', 'is_deleted', 'coa_required', 'mobile_app_enabled', 'special_offer_enabled', 'decision_maker_mapped', 'is_supplier_activated', 'is_parent_child']:
+        if value.lower() in ['true', '1', 'yes']:
+            return True
+        elif value.lower() in ['false', '0', 'no']:
+            return False
+        else:
+            raise ValueError(f"Invalid boolean for column {column_name}: {value}")
+    
+    # Handle payment_reminders as JSONB
+    if column_name == 'payment_reminders':
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            raise ValueError(f"Invalid JSON for column {column_name}: {value}")
+    
+    # Default case: return the value as is
     return value
 
-def insert_data_to_postgres(csv_file_path, db_params, table_name):
-    conn = psycopg2.connect(**db_params)
-    cur = conn.cursor()
-
+def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5):
+    conn = None
+    cur = None
     try:
+        conn = psycopg2.connect(**db_params)
+        cur = conn.cursor()
+
         with open(csv_file_path, 'r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             
-            for row in csv_reader:
+            for row_num, row in enumerate(csv_reader, start=1):
+                if row_num > max_rows:
+                    break
+                
                 columns = []
                 values = []
                 for pg_col, csv_col in COLUMN_MAPPING.items():
                     if csv_col in row:
                         columns.append(pg_col)
-                        values.append(convert_to_postgres_type(row[csv_col], pg_col))
+                        try:
+                            converted_value = convert_to_postgres_type(row[csv_col], pg_col)
+                            values.append(converted_value)
+                        except ValueError as ve:
+                            print(f"Error on row {row_num}: {str(ve)}")
+                            break
+                else:
+                    insert_query = sql.SQL("INSERT INTO {} ({}) VALUES ({})").format(
+                        sql.Identifier(table_name),
+                        sql.SQL(', ').join(map(sql.Identifier, columns)),
+                        sql.SQL(', ').join(sql.Placeholder() * len(values))
+                    )
+                    
+                    try:
+                        cur.execute(insert_query, values)
+                        print(f"Inserted row {row_num}")
+                    except psycopg2.Error as e:
+                        print(f"Database error on row {row_num}: {str(e)}")
+                        conn.rollback()
+                    continue
                 
-                insert_query = sql.SQL("INSERT INTO {} ({}) VALUES ({})").format(
-                    sql.Identifier(table_name),
-                    sql.SQL(', ').join(map(sql.Identifier, columns)),
-                    sql.SQL(', ').join(sql.Placeholder() * len(values))
-                )
-                
-                cur.execute(insert_query, values)
-        
+                # If we're here, it means we broke out of the for loop due to an error
+                conn.rollback()
+
         conn.commit()
-        print("Data inserted successfully")
+        print(f"Data insertion completed. Attempted to insert {min(row_num, max_rows)} rows.")
     except Exception as e:
-        conn.rollback()
-        print(f"An error occurred: {e}")
+        if conn:
+            conn.rollback()
+        print(f"An unexpected error occurred: {e}")
     finally:
-        cur.close()
-        conn.close()
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 # Usage
-table_name = 'your_table_name'
-insert_data_to_postgres(csv_file_path, db_params, table_name)
+if __name__ == "__main__":
+    table_name = 'order_table'
+    insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5)
