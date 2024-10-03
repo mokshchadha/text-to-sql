@@ -5,6 +5,7 @@ import datetime
 import json
 import math
 import sys
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 COLUMN_MAPPING = {
     'id': '_id',
@@ -234,7 +235,7 @@ COLUMN_MAPPING = {
 }
 
 
-csv_file_path = 'small_table.csv'
+csv_file_path = 'orders_table.csv'
 
 
 db_params = {
@@ -245,10 +246,70 @@ db_params = {
     'port':'5444'
 }
 
+def handle_decimal(value, column_name):
+    decimal_columns = {
+        'margin': (5, 2),
+        'group_credit_interest': (5, 2),
+        'group_markup_value': (5, 2),
+        'group_margin': (5, 2),
+        'quantity': (10, 2),
+        'single_quantity': (10, 2),
+        'supplier_credit_note_value': (10, 2),
+        'buyer_price': (10, 2),
+        'buyer_credit_note_value': (10, 2),
+        'supplier_price': (10, 2),
+        'total_amount': (10, 2),
+        'invoice_value': (10, 2),
+        'invoice_balance': (10, 2),
+        'overdue_amount': (10, 2),
+        'netback': (10, 2),
+        'netback_sf': (10, 2),
+        'freight_offset': (10, 2),
+        'group_limit': (10, 2),
+        'group_credit_limit': (10, 2),
+        'group_available_limit': (10, 2),
+        'dgft_import': (10, 2),
+        'dgft_import_mapped': (10, 2),
+        'credit_order': (10, 2),
+        'lifetime_volume': (10, 2),
+        'volume_supplied': (10, 2),
+        'total_mapped_qty': (10, 2),
+        'last_6mnt_lowest_not_adjusted': (10, 2),
+        'last_6mnt_lowest_adjusted': (10, 2),
+        'app_live_price': (10, 2),
+        'l1_netback': (10, 2),
+        'l2_netback': (10, 2),
+        'l3_netback': (10, 2),
+        'freight_quotes_l1': (10, 2),
+        'freight_quotes_l2': (10, 2),
+        'freight_quotes_l3': (10, 2)
+    }
+
+    if column_name not in decimal_columns:
+        return Decimal('0')
+
+    try:
+        if value in ['', 'N/A', 'NA', 'null', 'NULL', 'None', '0.0']:
+            return Decimal('0')
+
+        dec_value = Decimal(value)
+        precision, scale = decimal_columns[column_name]
+        max_value = Decimal('9' * precision) / (Decimal('10') ** scale)
+        min_value = -max_value
+        
+        if dec_value > max_value or dec_value < min_value:
+            print(f"Warning: Value {dec_value} for column {column_name} exceeds allowed range. Clamping to allowed range.")
+            dec_value = max(min(dec_value, max_value), min_value)
+        
+        return dec_value.quantize(Decimal('0.' + '0' * scale), rounding=ROUND_HALF_UP)
+    except InvalidOperation:
+        print(f"Warning: Invalid decimal value '{value}' for column {column_name}. Using 0 instead.")
+        return Decimal('0')
+
 
 
 def convert_to_postgres_type(value, column_name):
-    if value in ['', 'N/A', 'NA', 'null', 'NULL', 'None', '0.0']:
+    if value in ['', 'N/A', 'NA', 'null', 'NULL', 'None', '0.0'] or value.strip() == '':
         return None
     
     # Special handling for dispatch_date
@@ -260,9 +321,41 @@ def convert_to_postgres_type(value, column_name):
                 return datetime.datetime.strptime(value, '%Y-%m-%d').date()
             except ValueError:
                 raise ValueError(f"Invalid date format for column {column_name}: {value}")
+
+
+    if column_name in [ 'last_ordered_date', 'min_dispatch_date', 'max_dispatch_date']:
+        if value.strip() == '0' or value.strip() == '0.0':
+            return None
+        try:
+            return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S').date()
+        except ValueError:
+            try:
+                return datetime.datetime.strptime(value, '%Y-%m-%d').date()
+            except ValueError:
+                raise ValueError(f"Invalid date format for column {column_name}: {value}")
+
+    if column_name == 'group_creation_date':
+        try:
+            return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f').date()
+        except ValueError:
+            try:
+                return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S').date()
+            except ValueError:
+                try:
+                    return datetime.datetime.strptime(value, '%Y-%m-%d').date()
+                except ValueError:
+                    raise ValueError(f"Invalid date format for column {column_name}: {value}")
+    
+    
+    if column_name == 'group_waba_price_enabled':
+         try:
+            is_enabled = value == 'ENABLED'
+            return is_enabled
+         except ValueError:
+            raise ValueError(f"Invalid date format for column {column_name}: {value}")
     
     # Special handling for due_date
-    if column_name == 'due_date' or column_name == 'buyer_due_date':
+    if column_name in ['due_date', 'buyer_due_date', 'expected_delivery_date', 'actual_delivery_date', 'supplier_due_date']:
         try:
             return datetime.datetime.strptime(value, '%d/%m/%Y').date()
         except ValueError:
@@ -272,7 +365,7 @@ def convert_to_postgres_type(value, column_name):
                 raise ValueError(f"Invalid date format for column {column_name}: {value}")
     
     # Other date conversions
-    if column_name.endswith('_date') or column_name in ['buyer_due_date', 'expected_delivery_date', 'actual_delivery_date', 'supplier_due_date', 'eway_bill_expiry_date', 'max_dispatch_date', 'min_dispatch_date', 'last_ordered_date', 'group_creation_date', 'last_correspondence_date']:
+    if column_name.endswith('_date') or column_name in ['buyer_due_date', 'eway_bill_expiry_date', 'last_correspondence_date']:
         try:
             return datetime.datetime.strptime(value, '%Y-%m-%d').date()
         except ValueError:
@@ -281,33 +374,65 @@ def convert_to_postgres_type(value, column_name):
     # Timestamp conversions
     if column_name in ['applied_for_freight_payment_at', 'created_at', 'updated_at', 'change_time']:
         try:
-            timestamp = float(value)
-            if timestamp > 0:
+            # First, try to parse as a float (Unix timestamp)
+           timestamp = int(value)
+           if timestamp > 1000000000000:  # If timestamp is in milliseconds
+                return datetime.datetime.fromtimestamp(timestamp / 1000)
+           else:  # If timestamp is in seconds
                 return datetime.datetime.fromtimestamp(timestamp)
-            else:
-                return None
+        except ValueError:
+            # If that fails, try to parse as a datetime string
+            try:
+                return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f')
+            except ValueError:
+                try:
+                    return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    raise ValueError(f"Invalid timestamp for column {column_name}: {value}")
+
+    if column_name  == 'transit_distance_in_km':
+        try:
+            distance = value.replace("km", "").strip()
+            return int(float(distance))
         except ValueError:
             raise ValueError(f"Invalid timestamp for column {column_name}: {value}")
-    
-    # Integer conversions
-    if column_name in ['delay_days', 'logistic_delay_days', 'freight_quotes_count', 'orders_count', 'supplier_orders_count', 'last_order_days_ago', 'group_unfulfilled_order_count', 'last_buyer_app_usage_days_ago', 'listings_deactivation_timer', 'repeat_reminders_after', 'finance_update_count', 'email_id_count', 'days_passed', 'ceo', 'coo', 'dm_owner', 'dm_purchase_manager', 'finance', 'gst', 'logistics', 'md', 'owner', 'purchase_head', 'purchase_manager', 'sales_manager', 'undefined_role']:
+
+    integer_columns = [
+        'delay_score', 'logistic_delay_score', 'freight_cost',
+        'system_freight_cost', 'max_possible_freight_cost',
+        'invoice_due_days', 'adjusted_system_distance', 'freight_quotes_count',
+        'last_order_days_ago', 'group_unfulfilled_order_count', 'orders_count',
+        'last_buyer_app_usage_days_ago', 'listings_deactivation_timer',
+        'repeat_reminders_after', 'supplier_orders_count', 'last_correspondence_days_ago',
+        'days_passed', 'finance_update_count', 'email_id_count', 'ceo', 'coo',
+        'dm_owner', 'dm_purchase_manager', 'finance', 'gst', 'logistics', 'md',
+        'owner', 'purchase_head', 'purchase_manager', 'sales_manager', 'undefined_role',
+        'load'
+    ]
+
+    if column_name in integer_columns:
         try:
             return int(float(value))
         except ValueError:
             raise ValueError(f"Invalid integer for column {column_name}: {value}")
-    
-    # Float conversions
-    if column_name in ['single_quantity', 'quantity', 'freight_cost', 'last_freight_cost', 'system_freight_cost', 'max_possible_freight_cost', 'supplier_credit_note_value', 'buyer_price', 'buyer_credit_note_value', 'supplier_price', 'margin', 'total_amount', 'invoice_value', 'invoice_balance', 'overdue_amount', 'adjusted_system_distance', 'netback', 'netback_sf', 'freight_offset', 'group_limit', 'group_credit_interest', 'group_credit_limit', 'group_markup_value', 'group_margin', 'credit_order', 'lifetime_volume', 'volume_supplied', 'dgft_import', 'dgft_import_mapped', 'total_mapped_qty', 'last_6mnt_lowest_not_adjusted', 'last_6mnt_lowest_adjusted', 'app_live_price', 'l1_netback', 'l2_netback', 'l3_netback', 'freight_quotes_l1', 'freight_quotes_l2', 'freight_quotes_l3']:
-        try:
-            return float(value)
-        except ValueError:
-            raise ValueError(f"Invalid float for column {column_name}: {value}")
-    
-    if column_name == 'transit_distance_in_km':
-        try:
-            return float(value.replace("km", "").strip())
-        except ValueError:
-            raise ValueError(f"Invalid float for column {column_name}: {value}")
+
+    # Decimal columns
+    decimal_columns = [
+        'quantity', 'single_quantity', 'supplier_credit_note_value', 'buyer_price',
+        'buyer_credit_note_value', 'supplier_price', 'margin', 'total_amount',
+        'invoice_value', 'invoice_balance', 'overdue_amount', 'netback', 'netback_sf',
+        'freight_offset', 'group_limit', 'group_credit_interest', 'group_credit_limit',
+        'group_markup_value', 'group_margin', 'group_available_limit', 'dgft_import',
+        'dgft_import_mapped', 'credit_order', 'lifetime_volume', 'volume_supplied',
+        'total_mapped_qty', 'last_6mnt_lowest_not_adjusted', 'last_6mnt_lowest_adjusted',
+        'app_live_price', 'l1_netback', 'l2_netback', 'l3_netback', 'freight_quotes_l1',
+        'freight_quotes_l2', 'freight_quotes_l3'
+    ]
+
+    if column_name in decimal_columns:
+        return handle_decimal(value, column_name)
+
+
     
     # Boolean conversions
     if column_name in ['is_eway_bill_created', 'is_return', 'group_blacklisted', 'group_waba_price_enabled', 'is_deleted', 'coa_required', 'mobile_app_enabled', 'special_offer_enabled', 'decision_maker_mapped', 'is_supplier_activated', 'is_parent_child']:
@@ -386,4 +511,4 @@ def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5):
 # Usage
 if __name__ == "__main__":
     table_name = 'order_table'
-    insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5)
+    insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=50000)

@@ -1,4 +1,9 @@
-CREATE TABLE order_table (
+prompts = ['''
+    You are an expert in converting English questions to SQL queries, working for source.one
+    And you have the access to orders related information for the company source.one
+    The PostgreSQL database has a table named order_table with the following structure:
+
+    CREATE TABLE order_table (
   id VARCHAR(50) PRIMARY KEY, 
   order_number VARCHAR(10) , -- unique identifier for each order
   supplier_gst VARCHAR(30) , -- gst number of the supplier 
@@ -324,3 +329,12 @@ CREATE INDEX idx_gin_probable_supplier_group_name ON order_table USING gin (prob
 CREATE INDEX idx_gin_availability ON order_table USING gin (availability gin_trgm_ops);
 CREATE INDEX idx_gin_buyer_type ON order_table USING gin (buyer_type gin_trgm_ops);
 CREATE INDEX idx_gin_order_created_by ON order_table USING gin (order_created_by gin_trgm_ops);
+
+    
+    For example:
+    Example 1: How many records are present?, The SQL query will be SELECT COUNT(*) FROM order_table;
+    Example 2: (for varchar columns use ILIKE operator) Tell me all the orders with application type commodity?, The SQL query will be SELECT * FROM order_table WHERE application_type ILIKE '%Commodity%';
+    Example 3: (For gin indexed column use ts_query) Tell me the orders where buyer type is trader?, The SQL will be Select * FROM order_table WHERE buyer_type @@ to_tsquery('trader');
+
+    The SQL code should not have ``` in the beginning or end and should not include the word 'sql' in the output. and always limit the response to 100;
+''']

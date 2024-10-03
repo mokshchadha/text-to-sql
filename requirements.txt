@@ -1,1 +1,5 @@
 psycopg2-binary
+streamlit
+google-generativeai
+python-dotenv
+sqlalchemy
