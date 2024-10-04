@@ -248,7 +248,6 @@ db_params = {
 
 def handle_decimal(value, column_name):
     decimal_columns = {
-        'margin': (5, 2),
         'group_credit_interest': (5, 2),
         'group_markup_value': (5, 2),
         'group_margin': (5, 2),
@@ -259,9 +258,8 @@ def handle_decimal(value, column_name):
         'buyer_credit_note_value': (10, 2),
         'supplier_price': (10, 2),
         'total_amount': (10, 2),
-        'invoice_value': (10, 2),
-        'invoice_balance': (10, 2),
-        'overdue_amount': (10, 2),
+        # 'invoice_balance': (10, 2),
+        # 'overdue_amount': (10, 2),
         'netback': (10, 2),
         'netback_sf': (10, 2),
         'freight_offset': (10, 2),
@@ -289,7 +287,7 @@ def handle_decimal(value, column_name):
         return Decimal('0')
 
     try:
-        if value in ['', 'N/A', 'NA', 'null', 'NULL', 'None', '0.0']:
+        if value in ['', 'N/A', 'NA', 'null', 'NULL', 'None', '0.0', 'NaN']:
             return Decimal('0')
 
         dec_value = Decimal(value)
@@ -334,7 +332,9 @@ def convert_to_postgres_type(value, column_name):
             except ValueError:
                 raise ValueError(f"Invalid date format for column {column_name}: {value}")
 
-    if column_name == 'group_creation_date':
+    if column_name == 'group_creation_date' or column_name == 'last_correspondence_date':
+        if value.strip() == '0':
+            return None
         try:
             return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f').date()
         except ValueError:
@@ -365,7 +365,9 @@ def convert_to_postgres_type(value, column_name):
                 raise ValueError(f"Invalid date format for column {column_name}: {value}")
     
     # Other date conversions
-    if column_name.endswith('_date') or column_name in ['buyer_due_date', 'eway_bill_expiry_date', 'last_correspondence_date']:
+    if column_name.endswith('_date') or column_name in ['buyer_due_date', 'eway_bill_expiry_date']:
+        if value.strip() == '0':
+            return None
         try:
             return datetime.datetime.strptime(value, '%Y-%m-%d').date()
         except ValueError:
@@ -391,16 +393,18 @@ def convert_to_postgres_type(value, column_name):
                     raise ValueError(f"Invalid timestamp for column {column_name}: {value}")
 
     if column_name  == 'transit_distance_in_km':
+        if value.strip() == '' or value == 'ERR' or 'undefined' in value:
+            return None;
         try:
             distance = value.replace("km", "").strip()
             return int(float(distance))
         except ValueError:
-            raise ValueError(f"Invalid timestamp for column {column_name}: {value}")
+            raise ValueError(f"Invalid value for column {column_name}: {value}")
 
     integer_columns = [
-        'delay_score', 'logistic_delay_score', 'freight_cost',
+        'delay_score', 'logistic_delay_score', 'freight_cost', 'margin'
         'system_freight_cost', 'max_possible_freight_cost',
-        'invoice_due_days', 'adjusted_system_distance', 'freight_quotes_count',
+         'adjusted_system_distance', 'freight_quotes_count',
         'last_order_days_ago', 'group_unfulfilled_order_count', 'orders_count',
         'last_buyer_app_usage_days_ago', 'listings_deactivation_timer',
         'repeat_reminders_after', 'supplier_orders_count', 'last_correspondence_days_ago',
@@ -420,7 +424,7 @@ def convert_to_postgres_type(value, column_name):
     decimal_columns = [
         'quantity', 'single_quantity', 'supplier_credit_note_value', 'buyer_price',
         'buyer_credit_note_value', 'supplier_price', 'margin', 'total_amount',
-        'invoice_value', 'invoice_balance', 'overdue_amount', 'netback', 'netback_sf',
+          'netback', 'netback_sf',
         'freight_offset', 'group_limit', 'group_credit_interest', 'group_credit_limit',
         'group_markup_value', 'group_margin', 'group_available_limit', 'dgft_import',
         'dgft_import_mapped', 'credit_order', 'lifetime_volume', 'volume_supplied',
@@ -511,4 +515,4 @@ def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5):
 # Usage
 if __name__ == "__main__":
     table_name = 'order_table'
-    insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=50000)
+    insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=1000)
