@@ -6,14 +6,21 @@ import streamlit as st
 import os 
 import psycopg2
 import pandas as pd
+from openai import OpenAI
 
-import google.generativeai as genai 
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def get_gemini_response(question, prompts):
-    model = genai.GenerativeModel('gemini-1.5-pro')
-    response = model.generate_content([prompts[0], question])
-    return response.text
+def get_gpt4_response(question, prompts):
+    messages = [
+        {"role": "system", "content": prompts[0]},
+        {"role": "user", "content": question}
+    ]
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=messages
+    )
+    return response.choices[0].message.content
 
 def read_sql_query(sql):
     conn = psycopg2.connect(
@@ -27,8 +34,6 @@ def read_sql_query(sql):
     conn.close()
     return df
 
-
-
 # Streamlit App
 st.set_page_config(page_title="Chat with database")
 st.header("Get Source.one Orders Info")
@@ -37,7 +42,7 @@ question = st.text_input("Input: ", key="input")
 submit = st.button("Ask the question")
 
 if submit:
-    response = get_gemini_response(question, prompts)
+    response = get_gpt4_response(question, prompts)
     st.subheader("Generated SQL Query:")
     st.code(response, language="sql")
 
