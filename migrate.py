@@ -393,7 +393,7 @@ def convert_to_postgres_type(value, column_name):
                     raise ValueError(f"Invalid timestamp for column {column_name}: {value}")
 
     if column_name  == 'transit_distance_in_km':
-        if value.strip() == '' or value == 'ERR' or 'undefined' in value:
+        if value.strip() == '' or  'ERR' in value or 'undefined' in value:
             return None;
         try:
             distance = value.replace("km", "").strip()
@@ -457,7 +457,7 @@ def convert_to_postgres_type(value, column_name):
     # Default case: return the value as is
     return value
 
-def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5):
+def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5, min_row=0):
     conn = None
     cur = None
     try:
@@ -468,6 +468,8 @@ def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5):
             csv_reader = csv.DictReader(csv_file)
             
             for row_num, row in enumerate(csv_reader, start=1):
+                if row_num < min_row:
+                    continue
                 if row_num > max_rows:
                     break
                 
@@ -515,4 +517,4 @@ def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5):
 # Usage
 if __name__ == "__main__":
     table_name = 'order_table'
-    insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=1000)
+    insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=48990, min_row=40000)
