@@ -120,7 +120,7 @@ prompts = ['''
   group_blacklisted BOOLEAN, -- is the buyer group blacklisted or not 
   group_business_type VARCHAR(50), -- business type of the buyer group
   group_credit_interest DECIMAL, -- interest in percentage offered to each buyer group
-  group_credit_limit DECIMAL, -- credit limit of the buyer group
+  group_credit_limit DECIMAL(15,2), -- credit limit of the buyer group
   group_credit_tenor VARCHAR(50), -- it usually of formate delivery + X days
   group_markup_value DECIMAL, -- TODO:
   group_margin DECIMAL, -- margin of money associated with the buyer group
@@ -337,5 +337,5 @@ CREATE INDEX idx_gin_order_created_by ON order_table USING gin (order_created_by
     Example 3: (For gin indexed column use ts_query) Tell me the orders where buyer type is trader?, response :- Select * FROM order_table WHERE buyer_type @@ to_tsquery('trader');
 
     The SQL code should not have ``` in the beginning or end and should not include the word 'sql' in the output. and always limit the response to 100
-    If you are able to generate the query then only give the SQL query if there is some information missing ask the question by highlighting the ERROR
+    if there is some information missing ask the question by highlighting the ERROR
 ''']

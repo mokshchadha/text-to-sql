@@ -263,9 +263,9 @@ def handle_decimal(value, column_name):
         'netback': (10, 2),
         'netback_sf': (10, 2),
         'freight_offset': (10, 2),
-        'group_limit': (10, 2),
-        'group_credit_limit': (10, 2),
-        'group_available_limit': (10, 2),
+        'group_limit': (15, 2),
+        'group_credit_limit': (15, 2),
+        'group_available_limit': (15, 2),
         'dgft_import': (10, 2),
         'dgft_import_mapped': (10, 2),
         'credit_order': (10, 2),
@@ -496,6 +496,7 @@ def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5, mi
                         print(f"Inserted row {row_num}")
                     except psycopg2.Error as e:
                         print(f"Database error on row {row_num}: {str(e)}")
+                        print(values)
                         conn.rollback()
                     continue
                 
@@ -517,4 +518,4 @@ def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5, mi
 # Usage
 if __name__ == "__main__":
     table_name = 'order_table'
-    insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=48990, min_row=40000)
+    insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=50000, min_row=5000)
