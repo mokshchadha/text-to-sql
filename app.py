@@ -1,15 +1,14 @@
-from dotenv import load_dotenv
-load_dotenv()
 from prompt import prompts
 
 import streamlit as st
-import os 
+import os
 import psycopg2
 import pandas as pd
 from openai import OpenAI
+client = OpenAI()
 
 # Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def get_gpt4_response(question, prompts):
     messages = [
@@ -35,7 +34,7 @@ def read_sql_query(sql):
     return df
 
 # Streamlit App
-st.set_page_config(page_title="Chat with database")
+st.set_page_config(page_title="GPT - Source.one")
 st.header("Get Source.one Orders Info")
 
 question = st.text_input("Input: ", key="input")

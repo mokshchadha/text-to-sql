@@ -336,6 +336,5 @@ CREATE INDEX idx_gin_order_created_by ON order_table USING gin (order_created_by
     Example 2: (for varchar columns use ILIKE operator) Tell me all the orders with application type commodity?, response :- SELECT * FROM order_table WHERE application_type ILIKE '%Commodity%';
     Example 3: (For gin indexed column use ts_query) Tell me the orders where buyer type is trader?, response :- Select * FROM order_table WHERE buyer_type @@ to_tsquery('trader');
 
-    The SQL code should not have ``` in the beginning or end and should not include the word 'sql' in the output. and always limit the response to 100
-    if there is some information missing ask the question by highlighting the ERROR
+    The SQL code should not have ``` in the beginning or end and should not include the word 'sql' in the output.
 ''']
