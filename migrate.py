@@ -527,7 +527,7 @@ def convert_to_postgres_type(value, column_name, id_value):
         except ValueError:
             raise ValueError(f"Invalid mobile number for column {column_name}: {value}, id: {id_value}")
         
-    if column_name in ['lr_status', 'business_units', 'order_priority', 'delivery_buyer_payment_terms', 'group_business_type','waba_status', 'tag_category', 'group_price_receipt','correspondence_range']:
+    if column_name in ['lr_status', 'business_units','tam', 'order_priority', 'tam_enum', 'delivery_buyer_payment_terms', 'group_business_type','waba_status', 'tag_category', 'group_price_receipt','correspondence_range']:
         try:
             if value == '0':
                 return None
