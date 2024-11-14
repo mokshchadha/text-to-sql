@@ -188,19 +188,19 @@ COLUMN_MAPPING = {
     'finance_update_count': 'finance_update_count',
     'email_id_count': 'email_id_count',
     'is_parent_child': 'parent_child_available',
-    'number_of_ceo': 'ceo',
-    'number_of_coo': 'coo',
-    'number_of_dm_owner': 'dm_owner',
-    'number_of_dm_purchase_manager': 'dm_purchasemanager',
-    'number_of_finance': 'finance',
-    'number_of_gst': 'gst',
-    'number_of_logistics': 'logistics',
-    'number_of_md': 'md',
-    'number_of_owner': 'owner',
-    'number_of_purchase_head': 'purchase_head',
-    'number_of_purchase_manager': 'purchase_manager',
-    'number_of_sales_manager': 'sales_manager',
-    'number_of_undefined_role': 'undefined_role',
+    'ceo': 'ceo',
+    'coo': 'coo',
+    'dm_owner': 'dm_owner',
+    'dm_purchase_manager': 'dm_purchasemanager',
+    'finance': 'finance',
+    'gst': 'gst',
+    'logistics': 'logistics',
+    'md': 'md',
+    'owner': 'owner',
+    'purchase_head': 'purchase_head',
+    'purchase_manager': 'purchase_manager',
+    'sales_manager': 'sales_manager',
+    'undefined_role': 'undefined_role',
     'tam': 'tam',
     'tag_category': 'tag_category',
     'buyer_decision_maker_person': 'buyerdecisionmakerperson',
@@ -228,7 +228,7 @@ COLUMN_MAPPING = {
     'change_time': 'change_time',
     'probable_supplier_group_id': 'probable_suppliergroupid',
     'probable_supplier_group_name': 'probable_suppliergroupname',
-    'is_available': 'availability',
+    'availability': 'availability',
     'buyer_type': 'buyerType',
     'company_gst': 'companygst',
     'order_created_by': 'ordercreatedby'
@@ -306,8 +306,8 @@ def handle_decimal(value, column_name):
 
 
 
-def convert_to_postgres_type(value, column_name, id_value):
-    if value in ['', 'N/A', 'NA', 'na', 'null', 'NULL', 'None', '0.0'] or value.strip() == '':
+def convert_to_postgres_type(value, column_name):
+    if value in ['', 'N/A', 'NA', 'null', 'NULL', 'None', '0.0'] or value.strip() == '':
         return None
     
     # Special handling for dispatch_date
@@ -408,10 +408,10 @@ def convert_to_postgres_type(value, column_name, id_value):
         'last_order_days_ago', 'group_unfulfilled_order_count', 'orders_count',
         'last_buyer_app_usage_days_ago', 'listings_deactivation_timer',
         'repeat_reminders_after', 'supplier_orders_count', 'last_correspondence_days_ago',
-        'days_passed', 'finance_update_count', 'email_id_count', 'number_of_ceo', 'number_of_coo',
-        'number_of_dm_owner', 'number_of_dm_purchase_manager', 'number_of_finance', 'number_of_gst', 'number_of_logistics', 'number_of_md',
-        'number_of_owner', 'number_of_purchase_head', 'number_of_purchase_manager', 'number_of_sales_manager', 'number_of_undefined_role',
-        'load', 'payment_reminders'
+        'days_passed', 'finance_update_count', 'email_id_count', 'ceo', 'coo',
+        'dm_owner', 'dm_purchase_manager', 'finance', 'gst', 'logistics', 'md',
+        'owner', 'purchase_head', 'purchase_manager', 'sales_manager', 'undefined_role',
+        'load'
     ]
 
     if column_name in integer_columns:
@@ -453,120 +453,6 @@ def convert_to_postgres_type(value, column_name, id_value):
             return json.loads(value)
         except json.JSONDecodeError:
             raise ValueError(f"Invalid JSON for column {column_name}: {value}")
-        
-    
-    if column_name == 'invoice_due_days':
-        if not value.strip() or all(char == ',' for char in value.strip()):
-            return None
-        parts = [part.strip() for part in value.split(',') if part.strip()]
-        unique_numbers = {part for part in parts if part.isdigit()}
-        return int(unique_numbers.pop()) if unique_numbers else None
-    
-    if column_name == 'invoice_balance': 
-        if not value.strip() or all(char == ',' for char in value.strip()):
-            return None
-        
-        parts = [part.strip() for part in value.split(',') if part.strip()]
-        
-        last_numeric = None
-        for part in parts:
-            if part.isdigit():
-                last_numeric = int(part)  
-
-        return last_numeric
-    
-    if column_name == 'overdue_amount': 
-        if not value.strip() or all(char == ',' for char in value.strip()):
-            return None
-        parts = [part.strip() for part in value.split(',') if part.strip()]
-        
-        last_numeric = None
-        for part in parts:
-            try:
-                num = float(part)
-                last_numeric = num 
-            except ValueError:
-                continue 
-        return last_numeric
-    
-    if column_name == 'is_available':
-        try:
-            is_avail = False
-            if value == "Available":
-                is_avail = True
-            return is_avail
-        except ValueError:
-            raise ValueError(f"Invalid date format for column {column_name}: {value}")
-
-        
-    if column_name == 'buyer_type':
-        buyer_type_mapping = {
-            'Regular Buyer': 'REGULAR BUYER',
-            '0-1 Buyer': '0-1 BUYER',
-            'Attrition(Comeback) Buyer': 'ATTRITION(COMEBACK) BUYER'
-        }
-        
-        if value in buyer_type_mapping:
-            return buyer_type_mapping[value]
-        else:
-            raise ValueError(f"Invalid buyer type for column {column_name}: {value}")
-        
-    if column_name == 'freight_payment_application_status':
-        if value == '0':
-            return None
-        
-
-    if column_name in ['driver_mobile_number', 'buyer_poc', 'buyer_decision_maker']:
-        try:
-            if value == '0':
-                return None
-            digits = ''.join(filter(str.isdigit, value))
-            
-            return digits[-10:] if len(digits) >= 10 else digits
-        
-        except ValueError:
-            raise ValueError(f"Invalid mobile number for column {column_name}: {value}, id: {id_value}")
-        
-    if column_name in ['lr_status', 'business_units','tam', 'order_priority', 'tam_enum', 'delivery_buyer_payment_terms', 'group_business_type','waba_status', 'tag_category', 'group_price_receipt','correspondence_range']:
-        try:
-            if value == '0':
-                return None
-        
-        except ValueError:
-            raise ValueError(f"Invalid mobile number for column {column_name}: {value}, id: {id_value}")
-        
-    if column_name == 'buyer_delivery_terms':
-        try:
-            if value in ['0', 'dummy']:
-                return None
-            if value.lower() == 'f.o.r delivered. freight cost is included in the unit price':
-                return 'F.O.R DELIVERED. Freight Cost is included in the Unit Price' 
-
-        except ValueError:
-            raise ValueError(f"Invalid mobile number for column {column_name}: {value}, id: {id_value}")
-        
-    if column_name == 'order_status':
-        if value is None or not value.strip():
-            return None
-
-        value = value.strip().upper()
-        status_mapping = {
-            'VEHICLE DELIVERED': 'VEHICLE_DELIVERED',
-            'VEHICLE DISPATCHED': 'VEHICLE_DISPATCHED',
-            'PENDING': 'HOLD', 
-            'PENDING (TA,LA)': 'HOLD', 
-            'ENQUIRY SENT': 'ENQUIRY_SENT',
-        }
-        
-        if value in status_mapping:
-            return status_mapping[value]
-        else:
-            raise ValueError(f"Invalid order status for column {column_name}: {value}")
-
-
-        
-
-
     
     # Default case: return the value as is
     return value
@@ -589,12 +475,11 @@ def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5, mi
                 
                 columns = []
                 values = []
-
                 for pg_col, csv_col in COLUMN_MAPPING.items():
                     if csv_col in row:
                         columns.append(pg_col)
                         try:
-                            converted_value = convert_to_postgres_type(row[csv_col], pg_col, row['_id'])
+                            converted_value = convert_to_postgres_type(row[csv_col], pg_col)
                             values.append(converted_value)
                         except ValueError as ve:
                             print(f"Error on row {row_num}: {str(ve)}")
@@ -608,7 +493,7 @@ def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5, mi
                     
                     try:
                         cur.execute(insert_query, values)
-                        # print(f"Inserted row {row_num}")
+                        print(f"Inserted row {row_num}")
                     except psycopg2.Error as e:
                         print(f"Database error on row {row_num}: {str(e)}")
                         print(values)
@@ -633,4 +518,4 @@ def insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=5, mi
 # Usage
 if __name__ == "__main__":
     table_name = 'order_table'
-    insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=50000, min_row=1)
+    insert_data_to_postgres(csv_file_path, db_params, table_name, max_rows=50000, min_row=5000)
