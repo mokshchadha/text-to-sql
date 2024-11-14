@@ -1,9 +1,8 @@
-import csv
+import os
 import mysql.connector
 import datetime
 import json
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-
 
 COLUMN_MAPPING = {
     'id': '_id',
@@ -60,8 +59,8 @@ COLUMN_MAPPING = {
     'freight_pod_status': 'freightpodstatus',
     'rejection_reason': 'rejectionreason',
     'reapply_reason': 'reapplyreason',
-    'applied_for_freight_payment_at': 'appliedforfreightpaymentat',
-    'created_at': 'createdat', 
+    'applied_for_freight_payment_at': 'appliedforfreightpaymentat', 
+    'created_at': 'createdat',
     'updated_at': 'updatedat',
     'invoice_status': 'invoicestatus',
     'invoice_value': 'invoicevalue',
@@ -162,7 +161,7 @@ COLUMN_MAPPING = {
     'inactive_locations': 'inactive_location',
     'waba_status': 'wabastatus',
     'group_price_receipt': 'grouppricereceipt',
-    'decision_maker_mapped': 'decisonmakermapped', 
+    'decision_maker_mapped': 'decisonmakermapped',
     'buyer_decision_maker': 'buyerdecisionmaker',
     'dgft_import': 'dgft_import',
     'dgft_import_mapped': 'dgft_import_mapped',
@@ -180,7 +179,7 @@ COLUMN_MAPPING = {
     'days_passed_label': 'days_passed_label',
     'opportunity': 'opportunity',
     'volume_supplied': 'volumesupplied',
-    'is_supplier_activated': 'supplieractivated', 
+    'is_supplier_activated': 'supplieractivated',
     'liquidity_type': 'liquiditytype',
     'liquidity_buyer_type_attrition_slab': 'liquiditybuyertype_attrition_slab',
     'finance_update_count': 'finance_update_count',
@@ -231,7 +230,6 @@ COLUMN_MAPPING = {
     'company_gst': 'companygst',
     'order_created_by': 'ordercreatedby'
 }
-
 
 
 def handle_decimal(value, column_name):
@@ -291,24 +289,12 @@ def handle_decimal(value, column_name):
         return Decimal('0')
 
 
-def convert_to_database_type(value, column_name):
 
-    # Decimal columns
-    decimal_columns = [
-        'quantity', 'single_quantity', 'supplier_credit_note_value', 'buyer_price',
-        'buyer_credit_note_value', 'supplier_price', 'margin', 'total_amount',
-          'netback', 'netback_sf',
-        'freight_offset', 'group_limit', 'group_credit_interest', 'group_credit_limit',
-        'group_markup_value', 'group_margin', 'group_available_limit', 'dgft_import',
-        'dgft_import_mapped', 'credit_order', 'lifetime_volume', 'volume_supplied',
-        'total_mapped_qty', 'last_6mnt_lowest_not_adjusted', 'last_6mnt_lowest_adjusted',
-        'app_live_price', 'l1_netback', 'l2_netback', 'l3_netback', 'freight_quotes_l1',
-        'freight_quotes_l2', 'freight_quotes_l3'
-    ]
-
-    if (value in ['', 'N/A', 'NA', 'na', 'null', 'NULL', 'None', '0.0'] or value.strip() == '') and (column_name not in decimal_columns):
+def convert_type(value, column_name):    
+    value = str(value)
+    if value in ['', 'N/A', 'NA', 'na', 'null', 'NULL', 'None', '0.0'] or value.strip() == '':
         return None
-    
+
     if column_name == 'is_payment_made_to_supplier':
         if value == 'N':
             return False
@@ -325,7 +311,10 @@ def convert_to_database_type(value, column_name):
             try:
                 return datetime.datetime.strptime(value, '%Y-%m-%d').date()
             except ValueError:
-                raise ValueError(f"Invalid date format for column {column_name}: {value}")
+                try:
+                    return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S').date()
+                except ValueError:
+                    raise ValueError(f"Invalid date format for column {column_name}: {value}")
 
 
     if column_name in [ 'last_ordered_date', 'min_dispatch_date', 'max_dispatch_date']:
@@ -395,7 +384,7 @@ def convert_to_database_type(value, column_name):
     if column_name in ['applied_for_freight_payment_at', 'created_at', 'updated_at', 'change_time']:
         try:
             # First, try to parse as a float (Unix timestamp)
-           timestamp = int(value)
+           timestamp = float(value)
            if timestamp > 1000000000000:  # If timestamp is in milliseconds
                 return datetime.datetime.fromtimestamp(timestamp / 1000)
            else:  # If timestamp is in seconds
@@ -438,9 +427,22 @@ def convert_to_database_type(value, column_name):
         except ValueError:
             raise ValueError(f"Invalid integer for column {column_name}: {value}")
 
+    # Decimal columns
+    decimal_columns = [
+        'quantity', 'single_quantity', 'supplier_credit_note_value', 'buyer_price',
+        'buyer_credit_note_value', 'supplier_price', 'margin', 'total_amount',
+        'netback', 'netback_sf',
+        'freight_offset', 'group_limit', 'group_credit_interest', 'group_credit_limit',
+        'group_markup_value', 'group_margin', 'group_available_limit', 'dgft_import',
+        'dgft_import_mapped', 'credit_order', 'lifetime_volume', 'volume_supplied',
+        'total_mapped_qty', 'last_6mnt_lowest_not_adjusted', 'last_6mnt_lowest_adjusted',
+        'app_live_price', 'l1_netback', 'l2_netback', 'l3_netback', 'freight_quotes_l1',
+        'freight_quotes_l2', 'freight_quotes_l3'
+    ]
 
     if column_name in decimal_columns:
         return handle_decimal(value, column_name)
+
 
     
     # Boolean conversions
@@ -466,7 +468,7 @@ def convert_to_database_type(value, column_name):
         parts = [part.strip() for part in value.split(',') if part.strip()]
         unique_numbers = {part for part in parts if part.isdigit()}
         return int(unique_numbers.pop()) if unique_numbers else None
-
+    
     
     if column_name == 'is_available':
         try:
@@ -539,78 +541,115 @@ def convert_to_database_type(value, column_name):
     return value
 
 
-def insert_data_to_database(csv_file_path, db_params, table_name, max_rows=5, min_row=0):
-    conn = None
-    cur = None
+def transfer_data(source_params, target_params, source_table, target_table, max_rows=5, min_row=0):
+    source_conn = None
+    source_cursor = None
+    target_conn = None
+    target_cursor = None
+
     try:
-        conn = mysql.connector.connect(**db_params)
-        cur = conn.cursor()
+        # Connect to source database
+        source_conn = mysql.connector.connect(**source_params)
+        source_cursor = source_conn.cursor(dictionary=True) 
+        
+        # Fetch data from source table
+        select_query = f"SELECT * FROM {source_table} order by createdat"
+        source_cursor.execute(select_query)
+        rows = source_cursor.fetchall()
 
-        with open(csv_file_path, 'r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
+        if not rows:
+            print("No data retrieved from MariaDB.")
+            return
+
+        # Connect to target database
+        target_conn = mysql.connector.connect(**target_params)
+        target_cursor = target_conn.cursor()
+
+        for row_num, row in enumerate(rows, start=1):
+            if row_num < min_row:
+                continue
+            if row_num > max_rows:
+                break
             
-            for row_num, row in enumerate(csv_reader, start=1):
-                if row_num < min_row:
-                    continue
-                if row_num > max_rows:
-                    break
-                
-                # print("csv_row: ", row)
-                columns = []
-                values = []
-
-                for db_col, csv_col in COLUMN_MAPPING.items():
-                    if csv_col in row:
-                        columns.append(db_col)
-                        try:
-                            converted_value = convert_to_database_type(row[csv_col], db_col)
-                            values.append(converted_value)
-                        except ValueError as ve:
-                            print(f"Error on row {row_num}: {str(ve)}")
-                            break
-                else:
-                    insert_query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
-
-                    
+            columns = []
+            values = []
+            
+            # Map the column names and values
+            for db_col, csv_col in COLUMN_MAPPING.items():
+                if csv_col in row:
+                    columns.append(db_col)
                     try:
-                        cur.execute(insert_query, values)
-                        print(f"Inserted row {row_num}")
-                    except Exception as e:
-                        print(f"Database error on row {row_num}: {str(e)}")
-                        print(values)
-                        conn.rollback()
-                    continue
-                                
-                # If we're here, it means we broke out of the for loop due to an error
-                conn.rollback()
+                        # Convert value
+                        converted_value = convert_type(row[csv_col], db_col)
+                        values.append(converted_value)
+                    except ValueError as ve:
+                        print(f"Error on row {row_num}: {str(ve)}")
+                        break
+            else:
+                # Prepare the insert query
+                insert_query = f"INSERT INTO {target_table} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
 
-        conn.commit()
+                try:
+                    target_cursor.execute(insert_query, values)
+                except Exception as e:
+                    print(f"Database error on row {row_num}: {str(e)}")
+                    print(values)
+                    target_conn.rollback()
+                    continue
+                else:
+                    print(f"Inserted row {row_num}")
+                    continue
+
+        target_conn.commit()
         print(f"Data insertion completed. Attempted to insert {min(row_num, max_rows)} rows.")
+    
     except Exception as e:
-        if conn:
-            conn.rollback()
+        # Rollback transactions if error occurs
+        if source_conn:
+            source_conn.rollback()
+        if target_conn:
+            target_conn.rollback()
         print(f"An unexpected error occurred: {e}")
+    
     finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+        # Close source connection
+        if source_cursor:
+            source_cursor.close()
+        if source_conn:
+            source_conn.close()
+
+        # Close target connection
+        if target_cursor:
+            target_cursor.close()
+        if target_conn:
+            target_conn.close()
+
 
 
 # Usage
 if __name__ == "__main__":
-    table_name = 'order_table'
 
-    db_params = {
-        'host': 'localhost',
-        'database': 'mydb',
-        'user': 'myuser',
-        'password': 'mypassword',
-        'port':'5454',
+    source_params  = {
+        'host': os.getenv("SOURCE_HOST"),
+        'database': os.getenv("SOURCE_DATABASE"),
+        'user': os.getenv("SOURCE_USER"),
+        'password': os.getenv("SOURCE_PASSWORD"),
+        'port': int(os.getenv("SOURCE_PORT")),
         'charset': 'utf8mb4', 
         'collation': 'utf8mb4_general_ci'
     }
 
-    csv_file_path = 'order_table_superset.csv'
+    target_params = {
+        'host': os.getenv("TARGET_HOST"),
+        'database': os.getenv("TARGET_DATABASE"),
+        'user': os.getenv("TARGET_USER"),
+        'password': os.getenv("TARGET_PASSWORD"),
+        'port': int(os.getenv("TARGET_PORT")),
+        'charset': 'utf8mb4', 
+        'collation': 'utf8mb4_general_ci'
+    }
+    
+    source_table = 'order_table_superset'
+    target_table = 'order_table'
 
-    insert_data_to_database(csv_file_path, db_params, table_name, max_rows=50000, min_row=1)
+    transfer_data(source_params, target_params, source_table, target_table, max_rows=50000, min_row=1)

@@ -37,7 +37,7 @@ def read_sql_query(sql):
 
 # Streamlit App
 st.set_page_config(page_title="GPT - Source.one")
-st.header("Get Source.one Orders Info")
+st.header("Get Source.one Orders Info From Mariadb")
 
 question = st.text_input("Input: ", key="input")
 submit = st.button("Ask the question")
@@ -48,6 +48,7 @@ if submit:
     st.code(response, language="sql")
 
     try:
+        print("question: ", question)
         df = read_sql_query(response)
         st.subheader("Query Results:")
 
