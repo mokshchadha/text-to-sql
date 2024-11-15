@@ -393,16 +393,8 @@ CREATE TABLE order_table (
     group_remarks TEXT, -- remarks for the buyer group
     group_unfulfilled_order_count INTEGER, -- orders for buyer group that were unfulfilled in the past
     group_waba_price_enabled BOOLEAN, -- whether WABA price is enabled or not for buyer group
-    highest_gst_slab VARCHAR(20) CHECK (highest_gst_slab IN (
-        '0',
-        '0 to 40 lakhs',
-        '40 lakhs to 1.5 Cr.',
-        '1.5 Cr. to 5 Cr.',
-        '5 Cr. to 25 Cr.',
-        '25 Cr. to 100 Cr.',
-        '100 Cr. to 500 Cr.',
-        '500 Cr. and above'
-    )), -- this is range for e.g., 5 Cr. to 25 Cr.
+    gst_slab_greater_than INTEGER, -- Value in lacs
+    gst_slab_less_than INTEGER, -- value in lacs
     orders_count INTEGER, -- count of orders for this particular buyer in the past
     account_manager VARCHAR(50), -- account manager of the buyer 
     business_units VARCHAR(25) CHECK (business_units IN (

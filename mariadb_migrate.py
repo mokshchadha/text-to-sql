@@ -129,7 +129,8 @@ COLUMN_MAPPING = {
     'group_remarks': 'groupremarks',
     'group_unfulfilled_order_count': 'groupunfulfilledordercount',
     'group_waba_price_enabled': 'groupwabapriceenabled',
-    'highest_gst_slab': 'highestgstslab',
+    'gst_slab_greater_than': 'highestgstslab',
+    'gst_slab_less_than': 'highestgstslab',
     'orders_count': 'orderscount',
     'account_manager': 'accountmanager',
     'business_units': 'businessunits',
@@ -308,6 +309,46 @@ def convert_to_database_type(value, column_name):
 
     if (value in ['', 'N/A', 'NA', 'na', 'null', 'NULL', 'None', '0.0'] or value.strip() == '') and (column_name not in decimal_columns):
         return None
+    
+    if column_name == 'gst_slab_greater_than':
+        if value == '0':
+            return 0
+        elif value == '0 to 40 lakhs':
+            return 0
+        elif value == '40 lakhs to 1.5 Cr.':
+            return 40
+        elif value == '1.5 Cr. to 5 Cr.':
+            return 150
+        elif value == '5 Cr. to 25 Cr.':
+            return 500
+        elif value == '25 Cr. to 100 Cr.':
+            return 2500
+        elif value == '100 Cr. to 500 Cr.':
+            return 10000
+        elif value == '500 Cr. and above':
+            return 50000 
+        else:
+            return None  
+    
+    if column_name == 'gst_slab_less_than':
+        if value == '0':
+            return 0
+        elif value == '0 to 40 lakhs':
+            return 40
+        elif value == '40 lakhs to 1.5 Cr.':
+            return 150
+        elif value == '1.5 Cr. to 5 Cr.':
+            return 500
+        elif value == '5 Cr. to 25 Cr.':
+            return 2500
+        elif value == '25 Cr. to 100 Cr.':
+            return 10000
+        elif value == '100 Cr. to 500 Cr.':
+            return 50000
+        elif value == '500 Cr. and above':
+            return None
+        else:
+            return None
     
     if column_name == 'is_payment_made_to_supplier':
         if value == 'N':
@@ -599,7 +640,7 @@ def insert_data_to_database(csv_file_path, db_params, table_name, max_rows=5, mi
 
 # Usage
 if __name__ == "__main__":
-    table_name = 'order_table'
+    table_name = 'temp_order_table'
 
     db_params = {
         'host': 'localhost',
@@ -611,6 +652,6 @@ if __name__ == "__main__":
         'collation': 'utf8mb4_general_ci'
     }
 
-    csv_file_path = 'order_table_superset.csv'
+    csv_file_path = 'orders_table.csv'
 
-    insert_data_to_database(csv_file_path, db_params, table_name, max_rows=50000, min_row=1)
+    insert_data_to_database(csv_file_path, db_params, table_name, max_rows=60000, min_row=50001)
