@@ -640,7 +640,7 @@ def insert_data_to_database(csv_file_path, db_params, table_name, max_rows=5, mi
 
 # Usage
 if __name__ == "__main__":
-    table_name = 'temp_order_table'
+    table_name = 'order_table'
 
     db_params = {
         'host': 'localhost',
@@ -654,4 +654,4 @@ if __name__ == "__main__":
 
     csv_file_path = 'orders_table.csv'
 
-    insert_data_to_database(csv_file_path, db_params, table_name, max_rows=60000, min_row=50001)
+    insert_data_to_database(csv_file_path, db_params, table_name, max_rows=50000, min_row=1)

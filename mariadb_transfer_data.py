@@ -691,6 +691,6 @@ if __name__ == "__main__":
     }
     
     source_table = 'order_table_superset'
-    target_table = 'temp_order_table'
+    target_table = 'order_table'
 
-    transfer_data(source_params, target_params, source_table, target_table, max_rows=60000, min_row=50001)
+    transfer_data(source_params, target_params, source_table, target_table, max_rows=50000, min_row=1)
