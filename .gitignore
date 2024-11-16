@@ -164,3 +164,4 @@ rnd/*
 orders_table.csv
 .env
 rnd
+myenv/*
