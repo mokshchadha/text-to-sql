@@ -1,0 +1,15 @@
+[mysqld]
+# ColumnStore specific settings
+columnstore_use_import_for_batchinsert=ALWAYS
+columnstore_cache_size=1G
+
+# General settings
+max_connections=100
+innodb_buffer_pool_size=1G
+innodb_log_file_size=256M
+innodb_log_buffer_size=64M
+innodb_write_io_threads=8
+innodb_read_io_threads=8
+
+# Enable ColumnStore storage engine
+plugin-load-add=ha_columnstore.so

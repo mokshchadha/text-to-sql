@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb_container
+    restart: always
+    environment:
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+      MYSQL_ROOT_PASSWORD: rootpassword  # Required for MariaDB initialization
+    ports:
+      - "5454:3306"   
+    volumes:
+      - mariadb_data:/var/lib/mysql  
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro  
+    command: [
+      '--character-set-server=utf8mb4',
+      '--collation-server=utf8mb4_general_ci',
+      '--skip-character-set-client-handshake'
+    ]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mariadb_data:  # Named volume for data persistence
