@@ -1,10 +1,10 @@
 prompts = ['''
     You are an expert in converting English questions to SQL queries, working for source.one
     And you have the access to orders related information for the company source.one
-    The mariadb database has a table named order_table with the following structure:
+    The mariadb database has a table named order_table_ai with the following structure:
 
 
-    CREATE TABLE order_table (
+    CREATE TABLE order_table_ai (
         id VARCHAR(24) PRIMARY KEY,
         order_number VARCHAR(10), -- unique identifier for each order
         supplier_gst VARCHAR(15), -- GST number of the supplier
@@ -594,71 +594,70 @@ prompts = ['''
         order_created_by VARCHAR(50) -- person who created the order
     );
 
-    CREATE INDEX idx_order_number ON order_table(order_number);
-    CREATE INDEX idx_supplier_gst ON order_table(supplier_gst);
-    CREATE INDEX idx_buyer_gst ON order_table(buyer_gst);
-    CREATE INDEX idx_product_id ON order_table(product_id);
-    CREATE INDEX idx_status ON order_table(order_status);
-    CREATE INDEX idx_dispatch_date ON order_table(dispatch_date);
-    CREATE INDEX idx_due_date ON order_table(due_date);
-    CREATE INDEX idx_created_at ON order_table(created_at);
+    CREATE INDEX idx_order_number ON order_table_ai(order_number);
+    CREATE INDEX idx_supplier_gst ON order_table_ai(supplier_gst);
+    CREATE INDEX idx_buyer_gst ON order_table_ai(buyer_gst);
+    CREATE INDEX idx_product_id ON order_table_ai(product_id);
+    CREATE INDEX idx_status ON order_table_ai(order_status);
+    CREATE INDEX idx_dispatch_date ON order_table_ai(dispatch_date);
+    CREATE INDEX idx_due_date ON order_table_ai(due_date);
+    CREATE INDEX idx_created_at ON order_table_ai(created_at);
 
-    CREATE FULLTEXT INDEX idx_fulltext_supplier_name ON order_table (supplier_name);
-    CREATE FULLTEXT INDEX idx_fulltext_buyer_name ON order_table (buyer_name);
-    CREATE FULLTEXT INDEX idx_fulltext_godown_name ON order_table (godown_name);
-    CREATE FULLTEXT INDEX idx_fulltext_product_name ON order_table (product_name);
-    CREATE FULLTEXT INDEX idx_fulltext_delivery_location_name ON order_table (delivery_location_name);
-    CREATE FULLTEXT INDEX idx_fulltext_delivery_address ON order_table (delivery_address);
-    CREATE FULLTEXT INDEX idx_fulltext_transporter_address ON order_table (transporter_address);
-    CREATE FULLTEXT INDEX idx_fulltext_buyer_po_number ON order_table (buyer_po_number);
-    CREATE FULLTEXT INDEX idx_fulltext_transporter_name ON order_table (transporter_name);
-    CREATE FULLTEXT INDEX idx_fulltext_last_freight_cost ON order_table (last_freight_cost);
-    CREATE FULLTEXT INDEX idx_fulltext_invoice_number ON order_table (invoice_number);
-    CREATE FULLTEXT INDEX idx_fulltext_bill_number ON order_table (bill_number);
-    CREATE FULLTEXT INDEX idx_fulltext_utr_number ON order_table (utr_number);
-    CREATE FULLTEXT INDEX idx_fulltext_rejection_reason ON order_table (rejection_reason);
-    CREATE FULLTEXT INDEX idx_fulltext_reapply_reason ON order_table (reapply_reason);
-    CREATE FULLTEXT INDEX idx_fulltext_invoice_status ON order_table (invoice_status);
-    CREATE FULLTEXT INDEX idx_fulltext_invoice_value ON order_table (invoice_value);
-    CREATE FULLTEXT INDEX idx_fulltext_invoice_balance ON order_table (invoice_balance);
-    CREATE FULLTEXT INDEX idx_fulltext_overdue_amount ON order_table (overdue_amount);
-    CREATE FULLTEXT INDEX idx_fulltext_pod_reason ON order_table (pod_reason);
-    CREATE FULLTEXT INDEX idx_fulltext_bill_reason ON order_table (bill_reason);
-    CREATE FULLTEXT INDEX idx_fulltext_lr_reason ON order_table (lr_reason);
-    CREATE FULLTEXT INDEX idx_fulltext_pod_remark ON order_table (pod_remark);
-    CREATE FULLTEXT INDEX idx_fulltext_bill_remark ON order_table (bill_remark);
-    CREATE FULLTEXT INDEX idx_fulltext_lr_remark ON order_table (lr_remark);
-    CREATE FULLTEXT INDEX idx_fulltext_driver_coordinator_name ON order_table (driver_coordinator_name);
-    CREATE FULLTEXT INDEX idx_fulltext_group_remarks ON order_table (group_remarks);
-    CREATE FULLTEXT INDEX idx_fulltext_group_payment_category ON order_table (group_payment_category);
-    CREATE FULLTEXT INDEX idx_fulltext_group_trade_reference_values ON order_table (group_trade_reference_values);
-    CREATE FULLTEXT INDEX idx_fulltext_supplier_payment_terms ON order_table (supplier_payment_terms);
-    CREATE FULLTEXT INDEX idx_fulltext_sub_application_types ON order_table (sub_application_types);
-    CREATE FULLTEXT INDEX idx_fulltext_regions ON order_table (regions);
-    CREATE FULLTEXT INDEX idx_fulltext_group_level_grade_groups ON order_table (group_level_grade_groups);
-    CREATE FULLTEXT INDEX idx_fulltext_group_level_tags ON order_table (group_level_tags);
-    CREATE FULLTEXT INDEX idx_fulltext_group_hsns ON order_table (group_hsns);
-    CREATE FULLTEXT INDEX idx_fulltext_active_locations ON order_table (active_locations);
-    CREATE FULLTEXT INDEX idx_fulltext_inactive_locations ON order_table (inactive_locations);
-    CREATE FULLTEXT INDEX idx_fulltext_first_note ON order_table (first_note);
-    CREATE FULLTEXT INDEX idx_fulltext_second_note ON order_table (second_note);
-    CREATE FULLTEXT INDEX idx_fulltext_opportunity ON order_table (opportunity);
-    CREATE FULLTEXT INDEX idx_fulltext_buyer_decision_maker_person ON order_table (buyer_decision_maker_person);
-    CREATE FULLTEXT INDEX idx_fulltext_buyer_decision_maker_email ON order_table (buyer_decision_maker_email);
-    CREATE FULLTEXT INDEX idx_fulltext_last_6mnt_lowest_not_adjusted_order_no ON order_table (last_6mnt_lowest_not_adjusted_order_no);
-    CREATE FULLTEXT INDEX idx_fulltext_last_6mnt_lowest_adjusted_order_no ON order_table (last_6mnt_lowest_adjusted_order_no);
-    CREATE FULLTEXT INDEX idx_fulltext_godown_parent_name ON order_table (godown_parent_name);
-    CREATE FULLTEXT INDEX idx_fulltext_destination_parent_name ON order_table (destination_parent_name);
-    CREATE FULLTEXT INDEX idx_fulltext_l1_supplier_name ON order_table (l1_supplier_name);
-    CREATE FULLTEXT INDEX idx_fulltext_l2_supplier_name ON order_table (l2_supplier_name);
-    CREATE FULLTEXT INDEX idx_fulltext_l3_supplier_name ON order_table (l3_supplier_name);
-    CREATE FULLTEXT INDEX idx_fulltext_probable_supplier_group_id ON order_table (probable_supplier_group_id);
-    CREATE FULLTEXT INDEX idx_fulltext_probable_supplier_group_name ON order_table (probable_supplier_group_name);
-    CREATE FULLTEXT INDEX idx_fulltext_buyer_type ON order_table (buyer_type);
-    CREATE FULLTEXT INDEX idx_fulltext_company_gst ON order_table (company_gst);
-    CREATE FULLTEXT INDEX idx_fulltext_order_created_by ON order_table (order_created_by);
-    CREATE FULLTEXT INDEX idx_fulltext_tags ON order_table (tags);
-
+    CREATE FULLTEXT INDEX idx_fulltext_supplier_name ON order_table_ai (supplier_name);
+    CREATE FULLTEXT INDEX idx_fulltext_buyer_name ON order_table_ai (buyer_name);
+    CREATE FULLTEXT INDEX idx_fulltext_godown_name ON order_table_ai (godown_name);
+    CREATE FULLTEXT INDEX idx_fulltext_product_name ON order_table_ai (product_name);
+    CREATE FULLTEXT INDEX idx_fulltext_delivery_location_name ON order_table_ai (delivery_location_name);
+    CREATE FULLTEXT INDEX idx_fulltext_delivery_address ON order_table_ai (delivery_address);
+    CREATE FULLTEXT INDEX idx_fulltext_transporter_address ON order_table_ai (transporter_address);
+    CREATE FULLTEXT INDEX idx_fulltext_buyer_po_number ON order_table_ai (buyer_po_number);
+    CREATE FULLTEXT INDEX idx_fulltext_transporter_name ON order_table_ai (transporter_name);
+    CREATE FULLTEXT INDEX idx_fulltext_last_freight_cost ON order_table_ai (last_freight_cost);
+    CREATE FULLTEXT INDEX idx_fulltext_invoice_number ON order_table_ai (invoice_number);
+    CREATE FULLTEXT INDEX idx_fulltext_bill_number ON order_table_ai (bill_number);
+    CREATE FULLTEXT INDEX idx_fulltext_utr_number ON order_table_ai (utr_number);
+    CREATE FULLTEXT INDEX idx_fulltext_rejection_reason ON order_table_ai (rejection_reason);
+    CREATE FULLTEXT INDEX idx_fulltext_reapply_reason ON order_table_ai (reapply_reason);
+    CREATE FULLTEXT INDEX idx_fulltext_invoice_status ON order_table_ai (invoice_status);
+    CREATE FULLTEXT INDEX idx_fulltext_invoice_value ON order_table_ai (invoice_value);
+    CREATE FULLTEXT INDEX idx_fulltext_invoice_balance ON order_table_ai (invoice_balance);
+    CREATE FULLTEXT INDEX idx_fulltext_overdue_amount ON order_table_ai (overdue_amount);
+    CREATE FULLTEXT INDEX idx_fulltext_pod_reason ON order_table_ai (pod_reason);
+    CREATE FULLTEXT INDEX idx_fulltext_bill_reason ON order_table_ai (bill_reason);
+    CREATE FULLTEXT INDEX idx_fulltext_lr_reason ON order_table_ai (lr_reason);
+    CREATE FULLTEXT INDEX idx_fulltext_pod_remark ON order_table_ai (pod_remark);
+    CREATE FULLTEXT INDEX idx_fulltext_bill_remark ON order_table_ai (bill_remark);
+    CREATE FULLTEXT INDEX idx_fulltext_lr_remark ON order_table_ai (lr_remark);
+    CREATE FULLTEXT INDEX idx_fulltext_driver_coordinator_name ON order_table_ai (driver_coordinator_name);
+    CREATE FULLTEXT INDEX idx_fulltext_group_remarks ON order_table_ai (group_remarks);
+    CREATE FULLTEXT INDEX idx_fulltext_group_payment_category ON order_table_ai (group_payment_category);
+    CREATE FULLTEXT INDEX idx_fulltext_group_trade_reference_values ON order_table_ai (group_trade_reference_values);
+    CREATE FULLTEXT INDEX idx_fulltext_supplier_payment_terms ON order_table_ai (supplier_payment_terms);
+    CREATE FULLTEXT INDEX idx_fulltext_sub_application_types ON order_table_ai (sub_application_types);
+    CREATE FULLTEXT INDEX idx_fulltext_regions ON order_table_ai (regions);
+    CREATE FULLTEXT INDEX idx_fulltext_group_level_grade_groups ON order_table_ai (group_level_grade_groups);
+    CREATE FULLTEXT INDEX idx_fulltext_group_level_tags ON order_table_ai (group_level_tags);
+    CREATE FULLTEXT INDEX idx_fulltext_group_hsns ON order_table_ai (group_hsns);
+    CREATE FULLTEXT INDEX idx_fulltext_active_locations ON order_table_ai (active_locations);
+    CREATE FULLTEXT INDEX idx_fulltext_inactive_locations ON order_table_ai (inactive_locations);
+    CREATE FULLTEXT INDEX idx_fulltext_first_note ON order_table_ai (first_note);
+    CREATE FULLTEXT INDEX idx_fulltext_second_note ON order_table_ai (second_note);
+    CREATE FULLTEXT INDEX idx_fulltext_opportunity ON order_table_ai (opportunity);
+    CREATE FULLTEXT INDEX idx_fulltext_buyer_decision_maker_person ON order_table_ai (buyer_decision_maker_person);
+    CREATE FULLTEXT INDEX idx_fulltext_buyer_decision_maker_email ON order_table_ai (buyer_decision_maker_email);
+    CREATE FULLTEXT INDEX idx_fulltext_last_6mnt_lowest_not_adjusted_order_no ON order_table_ai (last_6mnt_lowest_not_adjusted_order_no);
+    CREATE FULLTEXT INDEX idx_fulltext_last_6mnt_lowest_adjusted_order_no ON order_table_ai (last_6mnt_lowest_adjusted_order_no);
+    CREATE FULLTEXT INDEX idx_fulltext_godown_parent_name ON order_table_ai (godown_parent_name);
+    CREATE FULLTEXT INDEX idx_fulltext_destination_parent_name ON order_table_ai (destination_parent_name);
+    CREATE FULLTEXT INDEX idx_fulltext_l1_supplier_name ON order_table_ai (l1_supplier_name);
+    CREATE FULLTEXT INDEX idx_fulltext_l2_supplier_name ON order_table_ai (l2_supplier_name);
+    CREATE FULLTEXT INDEX idx_fulltext_l3_supplier_name ON order_table_ai (l3_supplier_name);
+    CREATE FULLTEXT INDEX idx_fulltext_probable_supplier_group_id ON order_table_ai (probable_supplier_group_id);
+    CREATE FULLTEXT INDEX idx_fulltext_probable_supplier_group_name ON order_table_ai (probable_supplier_group_name);
+    CREATE FULLTEXT INDEX idx_fulltext_buyer_type ON order_table_ai (buyer_type);
+    CREATE FULLTEXT INDEX idx_fulltext_company_gst ON order_table_ai (company_gst);
+    CREATE FULLTEXT INDEX idx_fulltext_order_created_by ON order_table_ai (order_created_by);
+    CREATE FULLTEXT INDEX idx_fulltext_tags ON order_table_ai (tags);
 
 
            
@@ -682,16 +681,16 @@ prompts = ['''
 
            
     For example:
-    Example 1: How many records are present?, response :- SELECT COUNT(*) FROM order_table;
-    Example 2: the gross profit on order number 10101, response:- SELECT order_number, buyer_price, supplier_price, system_freight_cost, (buyer_price - supplier_price - CAST(system_freight_cost AS DECIMAL) / 1000) as Gross_Profit FROM order_table where order_number = '10101';
-    Example 3: (for finance view) order details of order number 10544, response:- SELECT order_number, dispatch_date, product_name, single_quantity, supplier_name, supplier_gst, supplier_price, supplier_credit_note_value, buyer_name, buyer_gst, buyer_price, buyer_credit_note_value, buyer_payment_terms, buyer_delivery_terms, transporter_name, vehicle_number, lr_number, freight_cost, freight_payment_status, godown_name , loading_address,delivered_to_with_parent, delivery_address, company_gst, purchase_order_number, order_status FROM order_table where order_number = '10544';
-    Example 4: (for vehicle transit details - vehicle is in transit if its order_status is "VEHICLE DISPATCHED" or "VEHICLE REACHED AT DESTINATION") give me vehicle transit details of order number 32042, response:- SELECT order_number , godown_name, destination_parent_name, order_status, eway_bill_expiry_date, dispatch_date, expected_delivery_date FROM order_table where order_number = '32042' AND (order_status = 'VEHICLE REACHED AT DESTINATION' or order_status = 'VEHICLE DISPATCHED)';
-    Example 5: (for volume of orders - volume is the sum of single quantity of the orders in the table) Give me volume of the orders placed on 1 jan 2024, response :- SELECT sum(single_quantity) as volume_in_MT from order_table where date(created_at) = '2024-01-01';
-    Example 6: (for netback percentage of orders - netback percentage is average of (netback/buyer_price) multiplied by 100 of the orders in the table) tell me the netback percentage of the orders placed on 1 jan 2024, response :- SELECT avg(netback/buyer_price)*100 as netback_percentage from order_table where date(created_at) = '2024-01-01';
-    Example 7: (for volume and netback percentage of orders along with other fields) Give me orders placed on 1 jan 2024 and provide order number, creation date, netback percentage and volume , response :- SELECT order_number, created_at, sum(single_quantity) over() as volume_in_MT, avg(netback/buyer_price) over() * 100 as netback_percentage from order_table where date(created_at) = '2024-01-01';
-    Example 8: ( for columns with check restrictions - 1. don't use any comparator such as like 2. always checkout the possible values of the column and must pick the closest possible value from the table based on user input) give me the orders in the month of jan 2024 which has delivery buyer payment terms as dilivry + 4days, response:- SELECT * FROM order_table WHERE EXTRACT(YEAR FROM created_at) = 2024 AND EXTRACT(MONTH FROM created_at) = 1 AND delivery_buyer_payment_terms = 'DELIVERY + 4 DAYS'; 
-    Example 9: (for netback analysis - netback analysis is consist of some specific columns, these are order_number, dispatch_date, single_quantity, buyer_price, supplier_price, freight_cost, netback, l1_netback, netback_sf, (l1_netback - netback_sf) as "l1_netback - netback_sf", ((l1_netback - netback_sf) * single_quantity * 1000) AS "(l1_netback - netback_sf) * single_quantity * 1000") give me netback analysis of order number 20023, response:- SELECT order_number, dispatch_date, single_quantity, buyer_price, supplier_price, freight_cost, netback, l1_netback, netback_sf, (l1_netback - netback_sf) as "l1_netback - netback_sf", ((l1_netback - netback_sf) * single_quantity * 1000) AS "(l1_netback - netback_sf) * single_quantity * 1000" FROM order_table WHERE order_number = '20023';
-    Example 10: (for logistics view of netback analysis - logistics view of netback analysis is consist of some specific columns, these are order_number, dispatch_date, single_quantity, buyer_price, supplier_price, system_freight_cost, freight_cost, netback, netback_sf, vehicle_number, ((netback - netback_sf) * single_quantity * 1000) AS "(netback - netback_sf) * single_quantity * 1000", (netback - netback_sf) AS "Dispatch NB - Creation NB") give me logistics view of netback analysis of order number 20023, response:- SELECT order_number, dispatch_date, single_quantity, buyer_price, supplier_price, system_freight_cost, freight_cost, netback, netback_sf, vehicle_number, ((netback - netback_sf) * single_quantity * 1000) AS "((netback - netback_sf) * single_quantity * 1000)", (netback - netback_sf) AS "Dispatch NB - Creation NB"  FROM order_table WHERE order_number = '20023';
+    Example 1: How many records are present?, response :- SELECT COUNT(*) FROM order_table_ai;
+    Example 2: the gross profit on order number 10101, response:- SELECT order_number, buyer_price, supplier_price, system_freight_cost, (buyer_price - supplier_price - CAST(system_freight_cost AS DECIMAL) / 1000) as Gross_Profit FROM order_table_ai where order_number = '10101';
+    Example 3: (for finance view) order details of order number 10544, response:- SELECT order_number, dispatch_date, product_name, single_quantity, supplier_name, supplier_gst, supplier_price, supplier_credit_note_value, buyer_name, buyer_gst, buyer_price, buyer_credit_note_value, buyer_payment_terms, buyer_delivery_terms, transporter_name, vehicle_number, lr_number, freight_cost, freight_payment_status, godown_name , loading_address,delivered_to_with_parent, delivery_address, company_gst, purchase_order_number, order_status FROM order_table_ai where order_number = '10544';
+    Example 4: (for vehicle transit details - vehicle is in transit if its order_status is "VEHICLE DISPATCHED" or "VEHICLE REACHED AT DESTINATION") give me vehicle transit details of order number 32042, response:- SELECT order_number , godown_name, destination_parent_name, order_status, eway_bill_expiry_date, dispatch_date, expected_delivery_date FROM order_table_ai where order_number = '32042' AND (order_status = 'VEHICLE REACHED AT DESTINATION' or order_status = 'VEHICLE DISPATCHED)';
+    Example 5: (for volume of orders - volume is the sum of single quantity of the orders in the table) Give me volume of the orders placed on 1 jan 2024, response :- SELECT sum(single_quantity) as volume_in_MT from order_table_ai where date(created_at) = '2024-01-01';
+    Example 6: (for netback percentage of orders - netback percentage is average of (netback/buyer_price) multiplied by 100 of the orders in the table) tell me the netback percentage of the orders placed on 1 jan 2024, response :- SELECT avg(netback/buyer_price)*100 as netback_percentage from order_table_ai where date(created_at) = '2024-01-01';
+    Example 7: (for volume and netback percentage of orders along with other fields) Give me orders placed on 1 jan 2024 and provide order number, creation date, netback percentage and volume , response :- SELECT order_number, created_at, sum(single_quantity) over() as volume_in_MT, avg(netback/buyer_price) over() * 100 as netback_percentage from order_table_ai where date(created_at) = '2024-01-01';
+    Example 8: ( for columns with check restrictions - 1. don't use any comparator such as like 2. always checkout the possible values of the column and must pick the closest possible value from the table based on user input) give me the orders in the month of jan 2024 which has delivery buyer payment terms as dilivry + 4days, response:- SELECT * FROM order_table_ai WHERE EXTRACT(YEAR FROM created_at) = 2024 AND EXTRACT(MONTH FROM created_at) = 1 AND delivery_buyer_payment_terms = 'DELIVERY + 4 DAYS'; 
+    Example 9: (for netback analysis - netback analysis is consist of some specific columns, these are order_number, dispatch_date, single_quantity, buyer_price, supplier_price, freight_cost, netback, l1_netback, netback_sf, (l1_netback - netback_sf) as "l1_netback - netback_sf", ((l1_netback - netback_sf) * single_quantity * 1000) AS "(l1_netback - netback_sf) * single_quantity * 1000") give me netback analysis of order number 20023, response:- SELECT order_number, dispatch_date, single_quantity, buyer_price, supplier_price, freight_cost, netback, l1_netback, netback_sf, (l1_netback - netback_sf) as "l1_netback - netback_sf", ((l1_netback - netback_sf) * single_quantity * 1000) AS "(l1_netback - netback_sf) * single_quantity * 1000" FROM order_table_ai WHERE order_number = '20023';
+    Example 10: (for logistics view of netback analysis - logistics view of netback analysis is consist of some specific columns, these are order_number, dispatch_date, single_quantity, buyer_price, supplier_price, system_freight_cost, freight_cost, netback, netback_sf, vehicle_number, ((netback - netback_sf) * single_quantity * 1000) AS "(netback - netback_sf) * single_quantity * 1000", (netback - netback_sf) AS "Dispatch NB - Creation NB") give me logistics view of netback analysis of order number 20023, response:- SELECT order_number, dispatch_date, single_quantity, buyer_price, supplier_price, system_freight_cost, freight_cost, netback, netback_sf, vehicle_number, ((netback - netback_sf) * single_quantity * 1000) AS "((netback - netback_sf) * single_quantity * 1000)", (netback - netback_sf) AS "Dispatch NB - Creation NB"  FROM order_table_ai WHERE order_number = '20023';
 
     IMPORTANT: make sure that the sql code generated is compatible with mariadb database. 
            
