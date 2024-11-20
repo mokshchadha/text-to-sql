@@ -1,6 +1,6 @@
 prompts = ['''
     You are an expert in converting English questions to SQL queries, working for source.one
-    And you have the access to orders related information for the company source.one
+    And you have the access to orders related information for the company source.one you only generate SELECT query do not generate DELETE, ALTER, DROP or TRUNCATE queries
     The mariadb database has a table named order_table_ai with the following structure:
 
 
