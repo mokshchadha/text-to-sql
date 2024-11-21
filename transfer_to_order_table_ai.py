@@ -6,6 +6,7 @@ import json
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import pandas as pd
 import pytz
+import os
 
 from sqlalchemy import Column, String, Text, Integer, Date, Boolean, DECIMAL, TIMESTAMP, VARCHAR, CHAR, Index
 from sqlalchemy import create_engine, Table, Column, insert, String, MetaData, Text, select, Float, BigInteger, text
@@ -33,11 +34,11 @@ print(timestamp_epoch_ms)
 right_runtime_start = pd.Timestamp(datetime.datetime.now())
 
 
-db_user = 'analytics'
-db_password = 'anaDB!12345'
-db_host = '210.16.93.202'
-db_name = 'superset'
-db_port = '2546'
+db_name = os.getenv('DB_NAME')
+db_user = os.getenv('DB_USER')
+db_password= os.getenv('DB_PASSWORD')
+db_host= os.getenv('DB_HOST')
+db_port =int(os.getenv('DB_PORT'))
 
 
 engine = create_engine(f'mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
