@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import pandas as pd
 import pytz
 
-from sqlalchemy import Column, String, Text, Integer, Date, Boolean, DECIMAL, TIMESTAMP, VARCHAR, CHAR
+from sqlalchemy import Column, String, Text, Integer, Date, Boolean, DECIMAL, TIMESTAMP, VARCHAR, CHAR, Index
 from sqlalchemy import create_engine, Table, Column, insert, String, MetaData, Text, select, Float, BigInteger, text
 from sqlalchemy.exc import OperationalError, ProgrammingError, SQLAlchemyError
 from sqlalchemy.dialects.mysql import insert as mysql_insert
@@ -74,6 +74,7 @@ else:
         'buyer': 'buyer_name',
         'godownid': 'godown_id',
         'godown': 'godown_name',
+        'quantity': 'quantity',
         'singlequantity': 'single_quantity',
         'productid': 'product_id',
         'productname': 'product_name',
@@ -657,7 +658,7 @@ else:
     order_table['gst_slab_greater_than'] = order_table['highestgstslab'].apply(get_gst_slab_greater_than)
     order_table['gst_slab_less_than'] = order_table['highestgstslab'].apply(get_gst_slab_less_than)
 
-    columns_to_remove = ['quantity','groupappenabled', 'createdatdate','highestgstslab']
+    columns_to_remove = ['groupappenabled', 'createdatdate','highestgstslab']
     order_table = order_table.drop(columns=columns_to_remove)
 
 
@@ -719,9 +720,9 @@ else:
         Column('freight_pod_status', String(30)),
         Column('rejection_reason', Text),
         Column('reapply_reason', Text),
-        Column('applied_for_freight_payment_at', Date),
-        Column('created_at', Date),
-        Column('updated_at', Date),
+        Column('applied_for_freight_payment_at', TIMESTAMP),
+        Column('created_at', TIMESTAMP),
+        Column('updated_at', TIMESTAMP),
         Column('invoice_status', Text),
         Column('invoice_value', Text),
         Column('invoice_due_days', Integer),
@@ -862,14 +863,14 @@ else:
         Column('tag_category', String(10)),
         Column('buyer_decision_maker_person', Text),
         Column('buyer_decision_maker_email', Text),
-        Column('ordered_grade_number', String(10)),
-        Column('ordered_grade_group', String(10)),
+        Column('ordered_grade_number', Text),
+        Column('ordered_grade_group', Text),
         Column('pan', String(10)),
         Column('total_mapped_qty', DECIMAL(10, 2)),
         Column('last_6mnt_lowest_not_adjusted', DECIMAL(10, 2)),
-        Column('last_6mnt_lowest_not_adjusted_order_no', String(10)),
+        Column('last_6mnt_lowest_not_adjusted_order_no', Text),
         Column('last_6mnt_lowest_adjusted', DECIMAL(10, 2)),
-        Column('last_6mnt_lowest_adjusted_order_no', String(10)),
+        Column('last_6mnt_lowest_adjusted_order_no', Text),
         Column('godown_parent_name', Text),
         Column('destination_parent_name', Text),
         Column('app_live_price', DECIMAL(10, 2)),
@@ -894,6 +895,71 @@ else:
 
     # Define the table
     table = Table('order_table_ai', metadata, *columns)
+
+    Index('idx_order_number', table.c.order_number)
+    Index('idx_supplier_gst', table.c.supplier_gst)
+    Index('idx_buyer_gst', table.c.buyer_gst)
+    Index('idx_product_id', table.c.product_id)
+    Index('idx_status', table.c.order_status)
+    Index('idx_dispatch_date', table.c.dispatch_date)
+    Index('idx_due_date', table.c.due_date)
+    Index('idx_created_at', table.c.created_at)
+    
+    Index('idx_fulltext_supplier_name', table.c.supplier_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_buyer_name', table.c.buyer_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_godown_name', table.c.godown_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_product_name', table.c.product_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_delivery_location_name', table.c.delivery_location_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_delivery_address', table.c.delivery_address, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_transporter_address', table.c.transporter_address, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_buyer_po_number', table.c.buyer_po_number, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_transporter_name', table.c.transporter_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_last_freight_cost', table.c.last_freight_cost, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_invoice_number', table.c.invoice_number, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_bill_number', table.c.bill_number, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_utr_number', table.c.utr_number, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_rejection_reason', table.c.rejection_reason, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_reapply_reason', table.c.reapply_reason, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_invoice_status', table.c.invoice_status, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_invoice_value', table.c.invoice_value, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_invoice_balance', table.c.invoice_balance, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_overdue_amount', table.c.overdue_amount, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_pod_reason', table.c.pod_reason, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_bill_reason', table.c.bill_reason, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_lr_reason', table.c.lr_reason, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_pod_remark', table.c.pod_remark, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_bill_remark', table.c.bill_remark, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_lr_remark', table.c.lr_remark, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_driver_coordinator_name', table.c.driver_coordinator_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_group_remarks', table.c.group_remarks, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_group_payment_category', table.c.group_payment_category, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_group_trade_reference_values', table.c.group_trade_reference_values, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_supplier_payment_terms', table.c.supplier_payment_terms, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_sub_application_types', table.c.sub_application_types, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_regions', table.c.regions, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_group_level_grade_groups', table.c.group_level_grade_groups, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_group_level_tags', table.c.group_level_tags, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_group_hsns', table.c.group_hsns, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_active_locations', table.c.active_locations, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_inactive_locations', table.c.inactive_locations, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_first_note', table.c.first_note, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_second_note', table.c.second_note, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_opportunity', table.c.opportunity, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_buyer_decision_maker_person', table.c.buyer_decision_maker_person, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_buyer_decision_maker_email', table.c.buyer_decision_maker_email, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_last_6mnt_lowest_not_adjusted_order_no', table.c.last_6mnt_lowest_not_adjusted_order_no, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_last_6mnt_lowest_adjusted_order_no', table.c.last_6mnt_lowest_adjusted_order_no, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_godown_parent_name', table.c.godown_parent_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_destination_parent_name', table.c.destination_parent_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_l1_supplier_name', table.c.l1_supplier_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_l2_supplier_name', table.c.l2_supplier_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_l3_supplier_name', table.c.l3_supplier_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_probable_supplier_group_id', table.c.probable_supplier_group_id, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_probable_supplier_group_name', table.c.probable_supplier_group_name, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_buyer_type', table.c.buyer_type, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_company_gst', table.c.company_gst, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_order_created_by', table.c.order_created_by, mysql_prefix='FULLTEXT')
+    Index('idx_fulltext_tags', table.c.tags, mysql_prefix='FULLTEXT')
 
     # Create the table in the database
     try:

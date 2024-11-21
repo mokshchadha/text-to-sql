@@ -4,8 +4,10 @@ import os
 import pandas as pd
 from openai import OpenAI
 import mysql.connector 
+from streamlit_ace import st_ace
+from dotenv import load_dotenv
+load_dotenv()
 
-# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def get_gpt4_response(question, prompts):
@@ -21,11 +23,11 @@ def get_gpt4_response(question, prompts):
 
 def read_sql_query(sql):
     conn = mysql.connector.connect(
-        database='mydb', 
-        user='myuser',
-        password='mypassword',
-        host='localhost',
-        port='5454',
+        database = os.getenv('DB_NAME'),
+        user = os.getenv('DB_USER'),
+        password= os.getenv('DB_PASSWORD'),
+        host= os.getenv('DB_HOST'),
+        port=int(os.getenv('DB_PORT')),
         charset='utf8mb4', 
         collation='utf8mb4_general_ci'
     )
@@ -33,52 +35,93 @@ def read_sql_query(sql):
     conn.close()
     return df
 
-# Streamlit App
-st.set_page_config(page_title="GPT - Source.one")
+if 'current_sql' not in st.session_state:
+    st.session_state.current_sql = ""
+if 'current_results' not in st.session_state:
+    st.session_state.current_results = None
+if 'question' not in st.session_state:
+    st.session_state.question = ""
+if 'error_message' not in st.session_state:
+    st.session_state.error_message = None
+if 'is_first_generation' not in st.session_state:
+    st.session_state.is_first_generation = True
+
+
+st.set_page_config(page_title="Source-GPT")
 st.header("Get Source.one Orders Info")
 
-# Add preview toggle
 show_preview = st.toggle("Enable Preview", value=True)
 
-question = st.text_input("Input: ", key="input")
-submit = st.button("Ask the question")
+question = st.text_input("Input: ", key="input", value=st.session_state.question)
 
-if submit:
-    response = get_gpt4_response(question, prompts)
+if st.button("Generate SQL"):
+    try:
+        st.session_state.question = question
+        generated_sql = get_gpt4_response(question, prompts)
+        st.session_state.current_sql = generated_sql
+        st.session_state.error_message = None
+        
+        if st.session_state.is_first_generation:
+            try:
+                df = read_sql_query(generated_sql)
+                st.session_state.current_results = df
+                st.session_state.is_first_generation = False
+            except Exception as e:
+                st.session_state.error_message = f"Error executing SQL: {str(e)}"
+    except Exception as e:
+        st.session_state.error_message = f"Error generating SQL: {str(e)}"
+
+if st.session_state.current_sql:
     st.subheader("Generated SQL Query:")
     
-    # Make SQL query editable and add execute button
     col1, col2 = st.columns([6, 1])
     with col1:
-        edited_sql = st.text_area("Edit SQL if needed:", value=response, height=100, key="sql_editor")
+        edited_sql = st_ace(
+            value=st.session_state.current_sql,
+            language="sql",
+            theme="sqlserver",
+            key="sql_editor",
+            height=100,
+            auto_update=True,
+            wrap=True,
+            show_gutter=True,
+            show_print_margin=True,
+            annotations=None,
+            min_lines=3,
+            keybinding="vscode",
+            tab_size=4
+        )
     with col2:
-        execute_sql = st.button("Execute SQL", key="execute_sql")
+        execute_sql = st.button("Run SQL")
 
-    try:
-        # Execute SQL when either the main submit button is pressed or execute_sql button is pressed
-        if submit or execute_sql:
-            print("question: ", question)
-            df = read_sql_query(edited_sql)  # Use the edited SQL instead of the original response
+    if execute_sql:
+        try:
+            df = read_sql_query(edited_sql)
+            st.session_state.current_results = df
+            st.session_state.error_message = None
+        except Exception as e:
+            st.session_state.error_message = f"Error executing SQL: {str(e)}"
 
-            # Create a container for download button and row count
-            result_header = st.container()
-            with result_header:
-                # Show the number of rows returned
-                st.write(f"Number of rows returned: {len(df)}")
-                # Download button
-                csv = df.to_csv(index=False)
-                st.download_button(
-                    label="Download data as CSV",
-                    data=csv,
-                    file_name="query_results.csv",
-                    mime="text/csv",
-                )
+if st.session_state.current_results is not None:
+    st.subheader("Query Results:")
+    
+    results_container = st.container()
+    with results_container:
+        st.write(f"Number of rows returned: {len(st.session_state.current_results)}")
+        
+        csv = st.session_state.current_results.to_csv(index=False)
+        st.download_button(
+            label="Download data as CSV",
+            data=csv,
+            file_name="query_results.csv",
+            mime="text/csv",
+        )
+        
+        if show_preview:
+            st.table(st.session_state.current_results)
 
-            # Only show preview if enabled
-            if show_preview:
-                st.subheader("Query Results:")
-                # Display the results in a SQL-like table format
-                st.table(df)
-                
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+if st.session_state.error_message:
+    st.error(st.session_state.error_message)
+
+if question != st.session_state.question:
+    st.session_state.is_first_generation = True

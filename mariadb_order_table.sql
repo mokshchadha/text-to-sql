@@ -1,5 +1,6 @@
 
 CREATE TABLE order_table_ai (
+CREATE TABLE order_table_ai (
     id VARCHAR(24) PRIMARY KEY,
     order_number VARCHAR(10), -- unique identifier for each order
     supplier_gst VARCHAR(15), -- GST number of the supplier
@@ -581,6 +582,14 @@ CREATE TABLE order_table_ai (
     order_created_by VARCHAR(50) -- person who created the order
 );
 
+CREATE INDEX idx_order_number ON order_table_ai(order_number);
+CREATE INDEX idx_supplier_gst ON order_table_ai(supplier_gst);
+CREATE INDEX idx_buyer_gst ON order_table_ai(buyer_gst);
+CREATE INDEX idx_product_id ON order_table_ai(product_id);
+CREATE INDEX idx_status ON order_table_ai(order_status);
+CREATE INDEX idx_dispatch_date ON order_table_ai(dispatch_date);
+CREATE INDEX idx_due_date ON order_table_ai(due_date);
+CREATE INDEX idx_created_at ON order_table_ai(created_at);
 CREATE INDEX idx_order_number ON order_table_ai(order_number);
 CREATE INDEX idx_supplier_gst ON order_table_ai(supplier_gst);
 CREATE INDEX idx_buyer_gst ON order_table_ai(buyer_gst);

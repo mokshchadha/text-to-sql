@@ -5,6 +5,7 @@ prompts = ['''
 
 
     CREATE TABLE order_table_ai (
+    CREATE TABLE order_table_ai (
         id VARCHAR(24) PRIMARY KEY,
         order_number VARCHAR(10), -- unique identifier for each order
         supplier_gst VARCHAR(15), -- GST number of the supplier

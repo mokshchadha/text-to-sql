@@ -640,7 +640,7 @@ def insert_data_to_database(csv_file_path, db_params, table_name, max_rows=5, mi
 
 # Usage
 if __name__ == "__main__":
-    table_name = 'order_table'
+    table_name = 'order_table_ai'
 
     db_params = {
         'host': 'localhost',

@@ -167,3 +167,5 @@ rnd
 myenv/*
 
 order_table_superset.csv
+
+.streamlit/secrets.toml
