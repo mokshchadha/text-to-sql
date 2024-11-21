@@ -1,9 +1,9 @@
 prompts = ['''
     You are an expert in converting English questions to SQL queries, working for source.one
-    And you have the access to orders related information for the company source.one you only generate SELECT query do not generate DELETE, ALTER, DROP or TRUNCATE queries
+    And you have the access to orders related information for the company source.one. you only generate SELECT query do not generate DELETE, ALTER, DROP or TRUNCATE queries
     The mariadb database has a table named order_table_ai with the following structure:
 
-
+           
     CREATE TABLE order_table_ai (
         id VARCHAR(24) PRIMARY KEY,
         order_number VARCHAR(10), -- unique identifier for each order
@@ -25,7 +25,7 @@ prompts = ['''
         expected_delivery_date DATE, -- expected date of delivery by internal calculations
         actual_delivery_date DATE, -- actual date on which order was delivered
         supplier_due_date DATE, -- due date for the supplier for payment
-        order_status VARCHAR(30) , -- status of order, possible status are Vehicle Delivered, Vehicle Dispatched, Transporter Confirmed, Vehicle Reached At Godown, PENDING (Adv), Vehicle Confirmed, Enquiry Sent, Vehicle Loaded, Vehicle Reached At Destination, PENDING (LC), Loading In Progress, PENDING (LA), Invoice Generated, PENDING, PENDING (TA,LA), PENDING (TA,Limit), PENDING (TA,Adv), PENDING (LA,Adv), PENDING (LA,LC), PENDING (LA,Limit), PENDING (TA,LA,Adv)
+        order_status VARCHAR(30) , -- status of order , possible status are Vehicle Delivered, Vehicle Dispatched, Transporter Confirmed, Vehicle Reached At Godown, PENDING (Adv), Vehicle Confirmed, Enquiry Sent, Vehicle Loaded, Vehicle Reached At Destination, PENDING (LC), Loading In Progress, PENDING (LA), Invoice Generated, PENDING, PENDING (TA,LA), PENDING (TA,Limit), PENDING (TA,Adv), PENDING (LA,Adv), PENDING (LA,LC), PENDING (LA,Limit), PENDING (TA,LA,Adv)
         buyer_payment_terms VARCHAR(30) CHECK (buyer_payment_terms IN (
             'ADVANCE',
             'PRE-ADVANCE',
@@ -398,16 +398,8 @@ prompts = ['''
         group_remarks TEXT, -- remarks for the buyer group
         group_unfulfilled_order_count INTEGER, -- orders for buyer group that were unfulfilled in the past
         group_waba_price_enabled BOOLEAN, -- whether WABA price is enabled or not for buyer group
-        highest_gst_slab VARCHAR(20) CHECK (highest_gst_slab IN (
-            '0',
-            '0 to 40 lakhs',
-            '40 lakhs to 1.5 Cr.',
-            '1.5 Cr. to 5 Cr.',
-            '5 Cr. to 25 Cr.',
-            '25 Cr. to 100 Cr.',
-            '100 Cr. to 500 Cr.',
-            '500 Cr. and above'
-        )), -- this is range for e.g., 5 Cr. to 25 Cr.
+        gst_slab_greater_than INTEGER, -- Value in lacs
+        gst_slab_less_than INTEGER, -- value in lacs
         orders_count INTEGER, -- count of orders for this particular buyer in the past
         account_manager VARCHAR(50), -- account manager of the buyer 
         business_units VARCHAR(25) CHECK (business_units IN (
@@ -594,6 +586,8 @@ prompts = ['''
         order_created_by VARCHAR(50) -- person who created the order
     );
 
+
+
     CREATE INDEX idx_order_number ON order_table_ai(order_number);
     CREATE INDEX idx_supplier_gst ON order_table_ai(supplier_gst);
     CREATE INDEX idx_buyer_gst ON order_table_ai(buyer_gst);
@@ -660,6 +654,7 @@ prompts = ['''
     CREATE FULLTEXT INDEX idx_fulltext_tags ON order_table_ai (tags);
 
 
+
            
     Instructions for Handling columns which has check restriction
       1. Value Validation: Always refer to the possible values for the corresponding column in the table. This is crucial to ensure that any value used in the query is valid. Always use a valid value in query.
@@ -691,7 +686,8 @@ prompts = ['''
     Example 8: ( for columns with check restrictions - 1. don't use any comparator such as like 2. always checkout the possible values of the column and must pick the closest possible value from the table based on user input) give me the orders in the month of jan 2024 which has delivery buyer payment terms as dilivry + 4days, response:- SELECT * FROM order_table_ai WHERE EXTRACT(YEAR FROM created_at) = 2024 AND EXTRACT(MONTH FROM created_at) = 1 AND delivery_buyer_payment_terms = 'DELIVERY + 4 DAYS'; 
     Example 9: (for netback analysis - netback analysis is consist of some specific columns, these are order_number, dispatch_date, single_quantity, buyer_price, supplier_price, freight_cost, netback, l1_netback, netback_sf, (l1_netback - netback_sf) as "l1_netback - netback_sf", ((l1_netback - netback_sf) * single_quantity * 1000) AS "(l1_netback - netback_sf) * single_quantity * 1000") give me netback analysis of order number 20023, response:- SELECT order_number, dispatch_date, single_quantity, buyer_price, supplier_price, freight_cost, netback, l1_netback, netback_sf, (l1_netback - netback_sf) as "l1_netback - netback_sf", ((l1_netback - netback_sf) * single_quantity * 1000) AS "(l1_netback - netback_sf) * single_quantity * 1000" FROM order_table_ai WHERE order_number = '20023';
     Example 10: (for logistics view of netback analysis - logistics view of netback analysis is consist of some specific columns, these are order_number, dispatch_date, single_quantity, buyer_price, supplier_price, system_freight_cost, freight_cost, netback, netback_sf, vehicle_number, ((netback - netback_sf) * single_quantity * 1000) AS "(netback - netback_sf) * single_quantity * 1000", (netback - netback_sf) AS "Dispatch NB - Creation NB") give me logistics view of netback analysis of order number 20023, response:- SELECT order_number, dispatch_date, single_quantity, buyer_price, supplier_price, system_freight_cost, freight_cost, netback, netback_sf, vehicle_number, ((netback - netback_sf) * single_quantity * 1000) AS "((netback - netback_sf) * single_quantity * 1000)", (netback - netback_sf) AS "Dispatch NB - Creation NB"  FROM order_table_ai WHERE order_number = '20023';
-
+    Example 11: (for gst_slab_greater_than and gst_slab_less_than, use greater than equal to or less than equal to respectively) give me orders on 20 jan 2024 of buyers whose gst slab is greater than 5 crore (It means that the gst_slab_greater_than column has value greater than or equal to 500). response - SELECT * FROM order_table_ai WHERE date(created_at) = '2024-01-20' AND gst_slab_greater_than >= 500;
+    
     IMPORTANT: make sure that the sql code generated is compatible with mariadb database. 
            
     The SQL code should not have ``` in the beginning or end and should not include the word 'sql' in the output.

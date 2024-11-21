@@ -393,16 +393,8 @@ CREATE TABLE order_table_ai (
     group_remarks TEXT, -- remarks for the buyer group
     group_unfulfilled_order_count INTEGER, -- orders for buyer group that were unfulfilled in the past
     group_waba_price_enabled BOOLEAN, -- whether WABA price is enabled or not for buyer group
-    highest_gst_slab VARCHAR(20) CHECK (highest_gst_slab IN (
-        '0',
-        '0 to 40 lakhs',
-        '40 lakhs to 1.5 Cr.',
-        '1.5 Cr. to 5 Cr.',
-        '5 Cr. to 25 Cr.',
-        '25 Cr. to 100 Cr.',
-        '100 Cr. to 500 Cr.',
-        '500 Cr. and above'
-    )), -- this is range for e.g., 5 Cr. to 25 Cr.
+    gst_slab_greater_than INTEGER, -- Value in lacs
+    gst_slab_less_than INTEGER, -- value in lacs
     orders_count INTEGER, -- count of orders for this particular buyer in the past
     account_manager VARCHAR(50), -- account manager of the buyer 
     business_units VARCHAR(25) CHECK (business_units IN (
@@ -597,6 +589,14 @@ CREATE INDEX idx_status ON order_table_ai(order_status);
 CREATE INDEX idx_dispatch_date ON order_table_ai(dispatch_date);
 CREATE INDEX idx_due_date ON order_table_ai(due_date);
 CREATE INDEX idx_created_at ON order_table_ai(created_at);
+CREATE INDEX idx_order_number ON order_table_ai(order_number);
+CREATE INDEX idx_supplier_gst ON order_table_ai(supplier_gst);
+CREATE INDEX idx_buyer_gst ON order_table_ai(buyer_gst);
+CREATE INDEX idx_product_id ON order_table_ai(product_id);
+CREATE INDEX idx_status ON order_table_ai(order_status);
+CREATE INDEX idx_dispatch_date ON order_table_ai(dispatch_date);
+CREATE INDEX idx_due_date ON order_table_ai(due_date);
+CREATE INDEX idx_created_at ON order_table_ai(created_at);
 
 CREATE FULLTEXT INDEX idx_fulltext_supplier_name ON order_table_ai (supplier_name);
 CREATE FULLTEXT INDEX idx_fulltext_buyer_name ON order_table_ai (buyer_name);
@@ -652,3 +652,4 @@ CREATE FULLTEXT INDEX idx_fulltext_probable_supplier_group_name ON order_table_a
 CREATE FULLTEXT INDEX idx_fulltext_buyer_type ON order_table_ai (buyer_type);
 CREATE FULLTEXT INDEX idx_fulltext_company_gst ON order_table_ai (company_gst);
 CREATE FULLTEXT INDEX idx_fulltext_order_created_by ON order_table_ai (order_created_by);
+CREATE FULLTEXT INDEX idx_fulltext_tags ON order_table_ai (tags);

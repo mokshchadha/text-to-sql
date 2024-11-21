@@ -52,9 +52,17 @@ st.header("Get Source.one Orders Info")
 
 show_preview = st.toggle("Enable Preview", value=True)
 
-question = st.text_input("Input: ", key="input", value=st.session_state.question)
+question = st.text_input("Input: ", key="input")
 
-if st.button("Generate SQL"):
+if question != st.session_state.question:
+    st.session_state.current_sql = ""
+    st.session_state.current_results = None
+    st.session_state.is_first_generation = True
+    st.session_state.error_message = None
+    st.session_state.question = question
+
+if st.button("Generate SQL"): 
+
     try:
         st.session_state.question = question
         generated_sql = get_gpt4_response(question, prompts)
