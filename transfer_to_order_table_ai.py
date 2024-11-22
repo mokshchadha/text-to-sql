@@ -33,7 +33,6 @@ print(timestamp_epoch_ms)
 
 right_runtime_start = pd.Timestamp(datetime.datetime.now())
 
-
 db_name = os.getenv('DB_NAME')
 db_user = os.getenv('DB_USER')
 db_password= os.getenv('DB_PASSWORD')
@@ -42,6 +41,8 @@ db_port =int(os.getenv('DB_PORT'))
 
 
 engine = create_engine(f'mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
+
+
 
 
 # Read the last runtime from scripts_runtime table
@@ -264,8 +265,8 @@ else:
         'tag_category': 'tag_category',
         'buyerdecisionmakerperson': 'buyer_decision_maker_person',
         'buyerdecisionmakeremail': 'buyer_decision_maker_email',
-        'orderedgradenumber': 'ordered_grade_number',
-        'orderedgradegroup': 'ordered_grade_group',
+        'orderedgradenumber': 'grade_number',
+        'orderedgradegroup': 'grade_group',
         'PAN': 'pan',
         'TotalMappedQty': 'total_mapped_qty',
         'last_6mnt_lowest_notadjusted': 'last_6mnt_lowest_not_adjusted',
@@ -864,8 +865,8 @@ else:
         Column('tag_category', String(10)),
         Column('buyer_decision_maker_person', Text),
         Column('buyer_decision_maker_email', Text),
-        Column('ordered_grade_number', Text),
-        Column('ordered_grade_group', Text),
+        Column('grade_number', Text),
+        Column('grade_group', Text),
         Column('pan', String(10)),
         Column('total_mapped_qty', DECIMAL(10, 2)),
         Column('last_6mnt_lowest_not_adjusted', DECIMAL(10, 2)),
