@@ -33,15 +33,6 @@ print(timestamp_epoch_ms)
 
 right_runtime_start = pd.Timestamp(datetime.datetime.now())
 
-DB_NAME="superset"
-DB_USER="analytics"
-DB_PASSWORD="anaDB!12345"
-DB_HOST="210.16.93.202"
-DB_PORT=2546
-
-engine2 = create_engine(f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
-
-
 db_name = os.getenv('DB_NAME')
 db_user = os.getenv('DB_USER')
 db_password= os.getenv('DB_PASSWORD')
