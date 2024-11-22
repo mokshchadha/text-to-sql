@@ -59,7 +59,7 @@ last_runtime = last_runtime-(2*60*1000)
 
 order_table = text("SELECT * FROM order_table_superset WHERE updatedat > :last_runtime")
 
-with engine2.connect() as connection:
+with engine.connect() as connection:
     order_table = pd.read_sql(order_table, connection, params={"last_runtime": last_runtime})
 
 if order_table.empty:
