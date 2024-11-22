@@ -33,6 +33,14 @@ print(timestamp_epoch_ms)
 
 right_runtime_start = pd.Timestamp(datetime.datetime.now())
 
+DB_NAME="superset"
+DB_USER="analytics"
+DB_PASSWORD="anaDB!12345"
+DB_HOST="210.16.93.202"
+DB_PORT=2546
+
+engine2 = create_engine(f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
+
 
 db_name = os.getenv('DB_NAME')
 db_user = os.getenv('DB_USER')
@@ -42,6 +50,8 @@ db_port =int(os.getenv('DB_PORT'))
 
 
 engine = create_engine(f'mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
+
+
 
 
 # Read the last runtime from scripts_runtime table
@@ -58,7 +68,7 @@ last_runtime = last_runtime-(2*60*1000)
 
 order_table = text("SELECT * FROM order_table_superset WHERE updatedat > :last_runtime")
 
-with engine.connect() as connection:
+with engine2.connect() as connection:
     order_table = pd.read_sql(order_table, connection, params={"last_runtime": last_runtime})
 
 if order_table.empty:
@@ -264,8 +274,8 @@ else:
         'tag_category': 'tag_category',
         'buyerdecisionmakerperson': 'buyer_decision_maker_person',
         'buyerdecisionmakeremail': 'buyer_decision_maker_email',
-        'orderedgradenumber': 'ordered_grade_number',
-        'orderedgradegroup': 'ordered_grade_group',
+        'orderedgradenumber': 'grade_number',
+        'orderedgradegroup': 'grade_group',
         'PAN': 'pan',
         'TotalMappedQty': 'total_mapped_qty',
         'last_6mnt_lowest_notadjusted': 'last_6mnt_lowest_not_adjusted',
@@ -864,8 +874,8 @@ else:
         Column('tag_category', String(10)),
         Column('buyer_decision_maker_person', Text),
         Column('buyer_decision_maker_email', Text),
-        Column('ordered_grade_number', Text),
-        Column('ordered_grade_group', Text),
+        Column('grade_number', Text),
+        Column('grade_group', Text),
         Column('pan', String(10)),
         Column('total_mapped_qty', DECIMAL(10, 2)),
         Column('last_6mnt_lowest_not_adjusted', DECIMAL(10, 2)),

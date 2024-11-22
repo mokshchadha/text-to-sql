@@ -548,8 +548,8 @@ CREATE TABLE order_table_ai (
     )), -- category of tag can be 
     buyer_decision_maker_person TEXT, -- name of the person who makes decision for buyer group
     buyer_decision_maker_email TEXT, -- email of the person who makes decision for buyer group
-    ordered_grade_number TEXT, -- grade number that was ordered in this order
-    ordered_grade_group TEXT, -- grade group that was ordered in this order
+    grade_number TEXT, -- grade number that was ordered in this order
+    grade_group TEXT, -- grade group that was ordered in this order
     pan VARCHAR(10), -- PAN card of the associated buyer 
     total_mapped_qty DECIMAL(10,2), -- mapped dgft input
     last_6mnt_lowest_not_adjusted DECIMAL(10,2), -- last 6 months lowest not adjusted price
