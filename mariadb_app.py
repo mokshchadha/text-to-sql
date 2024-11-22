@@ -8,7 +8,13 @@ from streamlit_ace import st_ace
 from dotenv import load_dotenv
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+api_key_openai = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key_openai)
+
+def sanitize_sql(sql_response):
+    return sql_response.replace("```sql", "").replace("```", "")
+
 
 def get_gpt4_response(question, prompts):
     messages = [
@@ -65,7 +71,8 @@ if st.button("Generate SQL"):
 
     try:
         st.session_state.question = question
-        generated_sql = get_gpt4_response(question, prompts)
+        sql_response_from_ai = get_gpt4_response(question, prompts)
+        generated_sql = sanitize_sql(sql_response_from_ai)
         st.session_state.current_sql = generated_sql
         st.session_state.error_message = None
         
