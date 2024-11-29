@@ -64,6 +64,8 @@ if 'rows_per_page' not in st.session_state:
     st.session_state.rows_per_page = 50
 if 'total_rows' not in st.session_state:
     st.session_state.total_rows = 0
+if 'editor_key' not in st.session_state:
+    st.session_state.editor_key = 0
 
 # Page configuration
 st.set_page_config(page_title="Source-GPT")
@@ -91,6 +93,7 @@ if st.button("Generate SQL"):
         print(generated_sql)
         st.session_state.current_sql = generated_sql
         st.session_state.error_message = None
+        st.session_state.editor_key += 1  # Increment the editor key to reset the editor
         
         if st.session_state.is_first_generation:
             try:
@@ -112,7 +115,7 @@ if st.session_state.current_sql:
             value=st.session_state.current_sql,
             language="sql",
             theme="sqlserver",
-            key="sql_editor",
+            key=f"sql_editor_{st.session_state.editor_key}",  # Use dynamic key
             height=100,
             auto_update=True,
             wrap=True,
