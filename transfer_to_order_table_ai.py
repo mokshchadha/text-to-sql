@@ -13,10 +13,8 @@ from sqlalchemy import create_engine, Table, Column, insert, String, MetaData, T
 from sqlalchemy.exc import OperationalError, ProgrammingError, SQLAlchemyError
 from sqlalchemy.dialects.mysql import insert as mysql_insert
 import pandas as pd
-from pymongo import MongoClient
 import numpy as np
 from dateutil.relativedelta import relativedelta
-from pymongo import MongoClient
 import re
 metadata = MetaData()
 from dotenv import load_dotenv
@@ -364,8 +362,8 @@ else:
 
         if column_name in ['is_parent', 'is_split']:
             if value is None:
-                return None
-            return bool(value)
+                return 0
+            return int(value)
         
 
         if column_name == 'is_payment_made_to_supplier':
@@ -618,8 +616,8 @@ else:
 
 
     def preprocess_dataframe(df):
-        df['is_parent'] = df['orderno'].apply(lambda x: False if '-1' in str(x) else True)
-        df['is_split'] = df['orderno'].apply(lambda x: bool(re.search(r'-[A-Z]$', str(x))) if pd.notna(x) else None)
+        df['is_parent'] = df['orderno'].apply(lambda x: 0 if '-1' in str(x) else 1)
+        df['is_split'] = df['orderno'].apply(lambda x: 1 if pd.notna(x) and bool(re.search(r'-[A-Z]$', str(x))) else 0)
         df = df.rename(columns = COLUMN_MAPPING)
         for column in df.columns:
             df[column] = df[column].apply(lambda value: convert_to_database_type(value, column))
@@ -680,8 +678,8 @@ else:
     columns = [
         Column('id', String(24), primary_key=True),
         Column('order_number', String(10), unique=True),
-        Column('is_parent', Boolean),
-        Column('is_split', Boolean),
+        Column('is_parent', Integer),
+        Column('is_split', Integer),
         Column('supplier_gst', String(15)),
         Column('supplier_name', Text),
         Column('buyer_gst', String(15)),
