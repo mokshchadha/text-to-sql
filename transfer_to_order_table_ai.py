@@ -19,6 +19,8 @@ from dateutil.relativedelta import relativedelta
 from pymongo import MongoClient
 import re
 metadata = MetaData()
+from dotenv import load_dotenv
+load_dotenv()
 
 
 def get_ist_now():
