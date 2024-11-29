@@ -7,6 +7,8 @@ prompts = ['''
     CREATE TABLE order_table_ai (
         id VARCHAR(24) PRIMARY KEY,
         order_number VARCHAR(10), -- unique identifier for each order
+        is_parent boolean DEFAULT NULL, -- is the order a parent order or not 
+        is_split boolean DEFAULT NULL, -- is the order a split order or not 
         supplier_gst VARCHAR(15), -- GST number of the supplier
         supplier_name TEXT, -- name of the supplier entity
         buyer_gst VARCHAR(15), -- buyer GST number
