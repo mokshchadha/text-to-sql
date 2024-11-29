@@ -55,6 +55,21 @@ export PYTHONUNBUFFERED=1
 export PYTHONUTF8=1
 export MALLOC_TRIM_THRESHOLD_=100000
 
+# Load environment variables from .env file
+if [ -f .env ]; then
+    export $(cat .env | grep -v '^#' | xargs)
+fi
+
+# Clear environment variables
+unset $(env | grep '^STREAMLIT_' | cut -d= -f1)
+# Then load new ones from .env
+if [ -f .env ]; then
+    export $(cat .env | grep -v '^#' | xargs)
+fi
+
+# Clear Streamlit cache
+streamlit cache clear
+
 # Start Streamlit with memory optimizations
 streamlit run mariadb_app.py \
     --server.maxUploadSize=1000 \

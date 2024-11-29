@@ -597,64 +597,6 @@ prompts = ['''
     CREATE INDEX idx_due_date ON order_table_ai(due_date);
     CREATE INDEX idx_created_at ON order_table_ai(created_at);
 
-    CREATE FULLTEXT INDEX idx_fulltext_supplier_name ON order_table_ai (supplier_name);
-    CREATE FULLTEXT INDEX idx_fulltext_buyer_name ON order_table_ai (buyer_name);
-    CREATE FULLTEXT INDEX idx_fulltext_godown_name ON order_table_ai (godown_name);
-    CREATE FULLTEXT INDEX idx_fulltext_product_name ON order_table_ai (product_name);
-    CREATE FULLTEXT INDEX idx_fulltext_delivery_location_name ON order_table_ai (delivery_location_name);
-    CREATE FULLTEXT INDEX idx_fulltext_delivery_address ON order_table_ai (delivery_address);
-    CREATE FULLTEXT INDEX idx_fulltext_transporter_address ON order_table_ai (transporter_address);
-    CREATE FULLTEXT INDEX idx_fulltext_buyer_po_number ON order_table_ai (buyer_po_number);
-    CREATE FULLTEXT INDEX idx_fulltext_transporter_name ON order_table_ai (transporter_name);
-    CREATE FULLTEXT INDEX idx_fulltext_last_freight_cost ON order_table_ai (last_freight_cost);
-    CREATE FULLTEXT INDEX idx_fulltext_invoice_number ON order_table_ai (invoice_number);
-    CREATE FULLTEXT INDEX idx_fulltext_bill_number ON order_table_ai (bill_number);
-    CREATE FULLTEXT INDEX idx_fulltext_utr_number ON order_table_ai (utr_number);
-    CREATE FULLTEXT INDEX idx_fulltext_rejection_reason ON order_table_ai (rejection_reason);
-    CREATE FULLTEXT INDEX idx_fulltext_reapply_reason ON order_table_ai (reapply_reason);
-    CREATE FULLTEXT INDEX idx_fulltext_invoice_status ON order_table_ai (invoice_status);
-    CREATE FULLTEXT INDEX idx_fulltext_invoice_value ON order_table_ai (invoice_value);
-    CREATE FULLTEXT INDEX idx_fulltext_invoice_balance ON order_table_ai (invoice_balance);
-    CREATE FULLTEXT INDEX idx_fulltext_overdue_amount ON order_table_ai (overdue_amount);
-    CREATE FULLTEXT INDEX idx_fulltext_pod_reason ON order_table_ai (pod_reason);
-    CREATE FULLTEXT INDEX idx_fulltext_bill_reason ON order_table_ai (bill_reason);
-    CREATE FULLTEXT INDEX idx_fulltext_lr_reason ON order_table_ai (lr_reason);
-    CREATE FULLTEXT INDEX idx_fulltext_pod_remark ON order_table_ai (pod_remark);
-    CREATE FULLTEXT INDEX idx_fulltext_bill_remark ON order_table_ai (bill_remark);
-    CREATE FULLTEXT INDEX idx_fulltext_lr_remark ON order_table_ai (lr_remark);
-    CREATE FULLTEXT INDEX idx_fulltext_driver_coordinator_name ON order_table_ai (driver_coordinator_name);
-    CREATE FULLTEXT INDEX idx_fulltext_group_remarks ON order_table_ai (group_remarks);
-    CREATE FULLTEXT INDEX idx_fulltext_group_payment_category ON order_table_ai (group_payment_category);
-    CREATE FULLTEXT INDEX idx_fulltext_group_trade_reference_values ON order_table_ai (group_trade_reference_values);
-    CREATE FULLTEXT INDEX idx_fulltext_supplier_payment_terms ON order_table_ai (supplier_payment_terms);
-    CREATE FULLTEXT INDEX idx_fulltext_sub_application_types ON order_table_ai (sub_application_types);
-    CREATE FULLTEXT INDEX idx_fulltext_regions ON order_table_ai (regions);
-    CREATE FULLTEXT INDEX idx_fulltext_group_level_grade_groups ON order_table_ai (group_level_grade_groups);
-    CREATE FULLTEXT INDEX idx_fulltext_group_level_tags ON order_table_ai (group_level_tags);
-    CREATE FULLTEXT INDEX idx_fulltext_group_hsns ON order_table_ai (group_hsns);
-    CREATE FULLTEXT INDEX idx_fulltext_active_locations ON order_table_ai (active_locations);
-    CREATE FULLTEXT INDEX idx_fulltext_inactive_locations ON order_table_ai (inactive_locations);
-    CREATE FULLTEXT INDEX idx_fulltext_first_note ON order_table_ai (first_note);
-    CREATE FULLTEXT INDEX idx_fulltext_second_note ON order_table_ai (second_note);
-    CREATE FULLTEXT INDEX idx_fulltext_opportunity ON order_table_ai (opportunity);
-    CREATE FULLTEXT INDEX idx_fulltext_buyer_decision_maker_person ON order_table_ai (buyer_decision_maker_person);
-    CREATE FULLTEXT INDEX idx_fulltext_buyer_decision_maker_email ON order_table_ai (buyer_decision_maker_email);
-    CREATE FULLTEXT INDEX idx_fulltext_last_6mnt_lowest_not_adjusted_order_no ON order_table_ai (last_6mnt_lowest_not_adjusted_order_no);
-    CREATE FULLTEXT INDEX idx_fulltext_last_6mnt_lowest_adjusted_order_no ON order_table_ai (last_6mnt_lowest_adjusted_order_no);
-    CREATE FULLTEXT INDEX idx_fulltext_godown_parent_name ON order_table_ai (godown_parent_name);
-    CREATE FULLTEXT INDEX idx_fulltext_destination_parent_name ON order_table_ai (destination_parent_name);
-    CREATE FULLTEXT INDEX idx_fulltext_l1_supplier_name ON order_table_ai (l1_supplier_name);
-    CREATE FULLTEXT INDEX idx_fulltext_l2_supplier_name ON order_table_ai (l2_supplier_name);
-    CREATE FULLTEXT INDEX idx_fulltext_l3_supplier_name ON order_table_ai (l3_supplier_name);
-    CREATE FULLTEXT INDEX idx_fulltext_probable_supplier_group_id ON order_table_ai (probable_supplier_group_id);
-    CREATE FULLTEXT INDEX idx_fulltext_probable_supplier_group_name ON order_table_ai (probable_supplier_group_name);
-    CREATE FULLTEXT INDEX idx_fulltext_buyer_type ON order_table_ai (buyer_type);
-    CREATE FULLTEXT INDEX idx_fulltext_company_gst ON order_table_ai (company_gst);
-    CREATE FULLTEXT INDEX idx_fulltext_order_created_by ON order_table_ai (order_created_by);
-    CREATE FULLTEXT INDEX idx_fulltext_tags ON order_table_ai (tags);
-
-
-
            
     Instructions for Handling columns which has check restriction
       1. Value Validation: Always refer to the possible values for the corresponding column in the table. This is crucial to ensure that any value used in the query is valid. Always use a valid value in query.
@@ -666,11 +608,8 @@ prompts = ['''
            Apply the same concept for every single column with restricted values.
         c. If the user input does not exactly match any of the value, select the value that is the most semantically related or or same in meaning or closest in meaning. But always choose a valid value and not the user input.
     
-           
-    Instructions for handling searching fields with varchar and text datatype
-        1. Closely observe all the fields for which fulltext index is defined. Use full text searching for those columns for which full text index is defined.
-
-           
+    Instruction on handling text or varchar columns :- Use LIKE in the query for comparison of strings eg:- name LIKE '%{user_input}%'
+    
     For any column related to date, always pick the current year if year is not mentioned.
     convert the timestamps to date for comparing with dates based on the question.
 
@@ -688,7 +627,7 @@ prompts = ['''
     Example 10: (for logistics view of netback analysis - logistics view of netback analysis is consist of some specific columns, these are order_number, dispatch_date, single_quantity, buyer_price, supplier_price, system_freight_cost, freight_cost, netback, netback_sf, vehicle_number, ((netback - netback_sf) * single_quantity * 1000) AS "(netback - netback_sf) * single_quantity * 1000", (netback - netback_sf) AS "Dispatch NB - Creation NB") give me logistics view of netback analysis of order number 20023, response:- SELECT order_number, dispatch_date, single_quantity, buyer_price, supplier_price, system_freight_cost, freight_cost, netback, netback_sf, vehicle_number, ((netback - netback_sf) * single_quantity * 1000) AS "((netback - netback_sf) * single_quantity * 1000)", (netback - netback_sf) AS "Dispatch NB - Creation NB"  FROM order_table_ai WHERE order_number = '20023';
     Example 11: (for gst_slab_greater_than and gst_slab_less_than, use greater than equal to or less than equal to respectively) give me orders on 20 jan 2024 of buyers whose gst slab is greater than 5 crore (It means that the gst_slab_greater_than column has value greater than or equal to 500). response - SELECT * FROM order_table_ai WHERE date(created_at) = '2024-01-20' AND gst_slab_greater_than >= 500;
     
-    IMPORTANT: make sure that the sql code generated is compatible with mariadb database. 
+    IMPORTANT: make sure that the sql code generated is compatible with mariadb database. and by default all queries should have is_parent=true
            
     The SQL code should not have ``` in the beginning or end and should not include the word 'sql' in the output.
 ''']

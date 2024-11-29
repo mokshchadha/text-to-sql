@@ -72,6 +72,8 @@ else:
     COLUMN_MAPPING = {
         '_id': 'id',
         'orderno': 'order_number',
+        'is_parent': 'is_parent',
+        'is_split': 'is_split',
         'supplierid': 'supplier_gst',
         'supplier': 'supplier_name',
         'buyerid': 'buyer_gst',
@@ -359,6 +361,11 @@ else:
         value = str(value)
         if value in ['', 'N/A', 'NA', 'na', 'nan', 'null', 'NULL', 'None', '0.0'] or value.strip() == '':
             return None
+
+        if column_name in ['is_parent', 'is_split']:
+            if value is None:
+                return None
+            return bool(value)
         
 
         if column_name == 'is_payment_made_to_supplier':
@@ -611,6 +618,8 @@ else:
 
 
     def preprocess_dataframe(df):
+        df['is_parent'] = df['orderno'].apply(lambda x: False if '-1' in str(x) else True)
+        df['is_split'] = df['orderno'].apply(lambda x: bool(re.search(r'-[A-Z]$', str(x))) if pd.notna(x) else None)
         df = df.rename(columns = COLUMN_MAPPING)
         for column in df.columns:
             df[column] = df[column].apply(lambda value: convert_to_database_type(value, column))
@@ -671,6 +680,8 @@ else:
     columns = [
         Column('id', String(24), primary_key=True),
         Column('order_number', String(10), unique=True),
+        Column('is_parent', Boolean),
+        Column('is_split', Boolean),
         Column('supplier_gst', String(15)),
         Column('supplier_name', Text),
         Column('buyer_gst', String(15)),

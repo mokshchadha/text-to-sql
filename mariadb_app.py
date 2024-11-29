@@ -7,7 +7,7 @@ import mysql.connector
 from streamlit_ace import st_ace
 from dotenv import load_dotenv
 import math
-load_dotenv()
+load_dotenv(override=True)
 
 api_key_openai = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key_openai)
@@ -88,6 +88,7 @@ if st.button("Generate SQL"):
         st.session_state.question = question
         sql_response_from_ai = get_gpt4_response(question, prompts)
         generated_sql = sanitize_sql(sql_response_from_ai)
+        print(generated_sql)
         st.session_state.current_sql = generated_sql
         st.session_state.error_message = None
         
@@ -152,7 +153,7 @@ if st.session_state.current_results is not None:
             mime="text/csv",
         )
         
-        if show_preview:
+        if show_preview and total_rows > 0:
             # Pagination controls
             col1, col2, col3 = st.columns([2, 2, 2])
             
