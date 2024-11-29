@@ -403,17 +403,7 @@ prompts = ['''
         gst_slab_greater_than INTEGER, -- Value in lacs
         gst_slab_less_than INTEGER, -- value in lacs
         orders_count INTEGER, -- count of orders for this particular buyer in the past
-        account_manager VARCHAR(50), -- account manager of the buyer 
-        business_units VARCHAR(25) CHECK (business_units IN (
-            'Commodity',
-            'Engineering',
-            'Engineering, Commodity',
-            'Commodity, Engineering',
-            'Commodity, Bulk',
-            'Bulk',
-            'PVC',
-            'PVC, Commodity'
-        )), -- business unit refers to the commodity or engineering
+        account_manager VARCHAR(50), -- account manager of the buyer business_units VARCHAR(25) -- business unit refers to the commodity or engineering
         group_payment_category TEXT, -- default payment category of the buyer group
         group_trade_reference_values TEXT, -- buyer group trade references comma separated
         is_deleted BOOLEAN, -- is the buyer group deleted or not 
