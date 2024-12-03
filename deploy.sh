@@ -47,9 +47,6 @@ echo "Clearing system cache..."
 sync
 echo 3 > /proc/sys/vm/drop_caches
 
-# Start the Streamlit app with increased memory limits
-echo "Starting Streamlit application..."
-
 # Set environment variables for Python memory management
 export PYTHONUNBUFFERED=1
 export PYTHONUTF8=1
@@ -70,15 +67,17 @@ fi
 # Clear Streamlit cache
 streamlit cache clear
 
-# Start Streamlit with memory optimizations
-streamlit run mariadb_app.py \
+echo "Starting Streamlit application with nohup..."
+
+# Start Streamlit with nohup and memory optimizations
+nohup streamlit run mariadb_app.py \
     --server.maxUploadSize=1000 \
     --server.maxMessageSize=1000 \
     --server.enableCORS=false \
     --server.enableXsrfProtection=true \
     --server.address=0.0.0.0 \
     --server.port=8501 \
-    &
+    > streamlit.log 2>&1 &
 
 # Get the new process ID
 NEW_PID=$!
@@ -97,4 +96,9 @@ fi
 echo "Initial memory usage:"
 ps -o pid,ppid,%cpu,%mem,cmd -p $NEW_PID
 
+# Create a PID file for future reference
+echo $NEW_PID > streamlit.pid
+
 echo "Deployment completed successfully!"
+echo "You can find the application logs in streamlit.log"
+echo "To stop the application later, use: kill -9 \$(cat streamlit.pid)"
