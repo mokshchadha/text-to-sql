@@ -6,6 +6,8 @@ pip install -r requirements.txt
 # Create .streamlit directory if it doesn't exist
 mkdir -p .streamlit
 
+touch .streamlit/secrets.toml
+
 # Create or update config.toml with memory settings
 cat > .streamlit/config.toml << EOL
 [server]
