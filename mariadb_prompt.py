@@ -15,8 +15,8 @@ prompts = ['''
         buyer_name TEXT, -- name of the buyer
         godown_id VARCHAR(24), -- location ID of the godown
         godown_name VARCHAR(30), -- location name of the godown
-        quantity DECIMAL(10, 2), -- combined quantity for the order
-        single_quantity DECIMAL(10, 2), -- actual quantity of the order
+        quantity DECIMAL(10, 2), -- combined quantity for the order i.e. if it is parent and child duo then this is the total quantity of that order
+        single_quantity DECIMAL(10, 2), -- actual quantity of the individual order in the parent and child order pair
         product_id VARCHAR(24), -- unique ID of the product
         product_name TEXT, -- official grade name that was ordered
         delivery_location_id VARCHAR(24), -- location ID of the delivery location
@@ -283,8 +283,8 @@ prompts = ['''
             'HARDCOPY_PENDING',
             'HARDCOPY_RECEIVED'
         )), -- status of proof of delivery for freight
-        rejection_reason TEXT, -- reason for rejection
-        reapply_reason TEXT, -- reason to reapply after rejection
+        rejection_reason TEXT, -- reason for rejection of the freight application , rejection is performed by finance team
+        reapply_reason TEXT, -- reason to reapply after rejection of the freight application , reapplication is performed by the logistic team
         applied_for_freight_payment_at TIMESTAMP, -- timestamp when freight payment application was made
         created_at TIMESTAMP, -- order creation timestamp
         updated_at TIMESTAMP, -- order update timestamp
@@ -299,7 +299,7 @@ prompts = ['''
             'Inactive',
             'Active',
             'Failed'
-        )), -- tracking status from cargo exchange
+        )), -- tracking status of the trip created in Cargo exchange portal and the trip is from godown to the delivery location
         pod_reason TEXT, -- reason for proof of delivery
         bill_reason TEXT, -- reason for the bill
         lr_reason TEXT, -- reason for the LR
@@ -413,7 +413,7 @@ prompts = ['''
         last_ordered_date DATE, -- date when the last order was placed by this group
         coa_required BOOLEAN, -- is COA certificate required or not for the buyer
         last_buyer_app_usage_days_ago INTEGER, -- the number of days since the buyer last used the app
-        payment_reminders INTEGER,
+        payment_reminders INTEGER, 
         mobile_app_enabled BOOLEAN, -- mobile app enabled for the buyer or not
         supplier_payment_terms TEXT, -- payment terms selected by the supplier
         order_priority VARCHAR(10) CHECK (order_priority IN (

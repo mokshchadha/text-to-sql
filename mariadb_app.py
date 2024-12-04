@@ -7,9 +7,19 @@ import mysql.connector
 from streamlit_ace import st_ace
 from dotenv import load_dotenv
 import math
+
+# Load environment variables as fallback
 load_dotenv(override=True)
 
-api_key_openai = os.getenv("OPENAI_API_KEY")
+# Helper function to get config values with fallback
+def get_config(key):
+    try:
+        return st.secrets[key]
+    except KeyError:
+        return os.getenv(key)
+
+# Get configuration with fallback
+api_key_openai = get_config("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key_openai)
 
 def sanitize_sql(sql_response):
@@ -28,11 +38,11 @@ def get_gpt4_response(question, prompts):
 
 def read_sql_query(sql):
     conn = mysql.connector.connect(
-        database = os.getenv('DB_NAME'),
-        user = os.getenv('DB_USER'),
-        password= os.getenv('DB_PASSWORD'),
-        host= os.getenv('DB_HOST'),
-        port=int(os.getenv('DB_PORT')),
+        database = get_config('DB_NAME'),
+        user = get_config('DB_USER'),
+        password = get_config('DB_PASSWORD'),
+        host = get_config('DB_HOST'),
+        port = int(get_config('DB_PORT')),
         charset='utf8mb4', 
         collation='utf8mb4_general_ci'
     )
