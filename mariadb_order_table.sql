@@ -16,6 +16,10 @@ CREATE TABLE order_table_ai (
     product_name TEXT, -- official grade name that was ordered
     delivery_location_id VARCHAR(24), -- location ID of the delivery location
     delivery_location_name VARCHAR(30), -- location name of the delivery location
+    supplier_state VARCHAR(30), -- state in which the supplier location i.e. godown is located 
+    buyer_state VARCHAR(30), -- state in which the buyer location i.e. delivery location is located 
+    godown_state_abbreviation VARCHAR(3), -- state abbreviation in which the supplier location i.e. godown is located 
+    delivery_state_abbreviation VARCHAR(3), -- state abbreviation in which the buyer location i.e. delivery location is located
     dispatch_date DATE, -- date of dispatch of the order
     due_date DATE, -- due date for the order
     buyer_due_date DATE, -- due date of the order for the buyer

@@ -15,19 +15,23 @@ prompts = ['''
         buyer_name TEXT, -- name of the buyer
         godown_id VARCHAR(24), -- location ID of the godown
         godown_name VARCHAR(30), -- location name of the godown
-        quantity DECIMAL(10, 2), -- combined quantity for the order i.e. if it is parent and child duo then this is the total quantity of that order
-        single_quantity DECIMAL(10, 2), -- actual quantity of the individual order in the parent and child order pair
+        quantity DECIMAL(10, 2), -- combined quantity for the order i.e. if it is parent and child order pair then this is the total quantity of that order -- this value is stored in tons
+        single_quantity DECIMAL(10, 2), -- actual quantity of the individual order in the parent and child order pair - this value is stored in tons
         product_id VARCHAR(24), -- unique ID of the product
         product_name TEXT, -- official grade name that was ordered
         delivery_location_id VARCHAR(24), -- location ID of the delivery location
         delivery_location_name VARCHAR(30), -- location name of the delivery location
-        dispatch_date DATE, -- date of dispatch of the order
-        due_date DATE, -- due date for the order
-        buyer_due_date DATE, -- due date of the order for the buyer
-        expected_delivery_date DATE, -- expected date of delivery by internal calculations
-        actual_delivery_date DATE, -- actual date on which order was delivered
-        supplier_due_date DATE, -- due date for the supplier for payment
+        dispatch_date DATE, -- date on which order was dispatched from the godown location to delivery location
+        due_date DATE, -- due date for the order as per the generated Invoice, this value does not change with time
+        buyer_due_date DATE, -- due date of the order for the buyer this value changes and is used to trigger payment reminders
+        expected_delivery_date DATE, -- date on which vehicle was supposed to reach the destination when order was created
+        actual_delivery_date DATE, --  date on which vehicle was actually reached and marked as delivered by team in admin console
+        supplier_due_date DATE, -- date on which payment is supposed to be made to the supplier.
         order_status VARCHAR(30) , -- status of order , possible status are Vehicle Delivered, Vehicle Dispatched, Transporter Confirmed, Vehicle Reached At Godown, PENDING (Adv), Vehicle Confirmed, Enquiry Sent, Vehicle Loaded, Vehicle Reached At Destination, PENDING (LC), Loading In Progress, PENDING (LA), Invoice Generated, PENDING, PENDING (TA,LA), PENDING (TA,Limit), PENDING (TA,Adv), PENDING (LA,Adv), PENDING (LA,LC), PENDING (LA,Limit), PENDING (TA,LA,Adv)
+        godown_state VARCHAR(30), -- state in which the supplier location i.e. godown is located 
+        delivery_state VARCHAR(30), -- state in which the buyer location i.e. delivery location is located 
+        godown_state_abbreviation VARCHAR(3), -- state abbreviation in which the supplier location i.e. godown is located 
+        delivery_state_abbreviation VARCHAR(3), -- state abbreviation in which the buyer location i.e. delivery location is located
         buyer_payment_terms VARCHAR(30) CHECK (buyer_payment_terms IN (
             'ADVANCE',
             'PRE-ADVANCE',
@@ -340,7 +344,6 @@ prompts = ['''
         vehicle_number VARCHAR(10), -- vehicle number for transportation
         delivered_to_with_parent TEXT, -- concatenated string of the delivery location with its parent location
         godown_with_parent TEXT, -- concatenated string of the godown location with its parent location
-        netback DECIMAL(10,2), -- netback received on every order, can be positive or negative
         buyer_group_id VARCHAR(24), -- group ID of the buyer entity group
         supplier_group_id VARCHAR(24), -- group ID of the supplier entity group
         order_request_id VARCHAR(24), -- order request ID from which this order was originally created
@@ -354,17 +357,17 @@ prompts = ['''
         supplier_team_remarks_concatenated TEXT, -- supplier team remarks concatenated with last time it was edited
         general_remarks_concatenated TEXT, -- general team remarks concatenated with last time it was edited
         driver_remarks_concatenated TEXT, -- driver team remarks concatenated with last time it was edited
-        netback_sf DECIMAL(10,2), -- netback based on system freight
+        netback DECIMAL(10,2), -- actual netback (per KG total  profit post all deductions) of the order calculated using the actual freight
+        netback_sf DECIMAL(10,2), -- estimated netback (per KG total  profit post all deductions) of the order calculated using the  system freight
         buyer_delivery_terms VARCHAR(60) CHECK (buyer_delivery_terms IN (
             'F.O.R DELIVERED. Freight Cost is included in the Unit Price',
             'Ex-Godown'
         )), -- delivery terms for buyer
-        state_abbreviation CHAR(2), -- state abbreviation
         load_amount INTEGER, -- load quantity
         freight_offset DECIMAL(10,2), 
         max_dispatch_date DATE, -- last order dispatch date for group entity
         min_dispatch_date DATE, -- first order dispatch date for group entity
-        last_order_days_ago INTEGER, -- days since the last order was placed
+        last_order_days_ago INTEGER, -- when was the last order placed by the current buyer group associated with this order
         group_name TEXT, -- buyer group name 
         group_limit DECIMAL(15,2), -- limit of group for purchasing
         group_blacklisted BOOLEAN, -- is the buyer group blacklisted or not 
@@ -395,7 +398,6 @@ prompts = ['''
             'DELIVERY + 81 DAYS', 'DELIVERY + 82 DAYS', 'DELIVERY + 83 DAYS', 'DELIVERY + 84 DAYS', 'DELIVERY + 85 DAYS',
             'DELIVERY + 86 DAYS', 'DELIVERY + 87 DAYS', 'DELIVERY + 88 DAYS', 'DELIVERY + 89 DAYS', 'DELIVERY + 90 DAYS'
         )), -- it usually is 0 or of format delivery + X days
-        group_markup_value DECIMAL(5,2), 
         group_margin DECIMAL(5,2), -- margin of money associated with the buyer group
         group_remarks TEXT, -- remarks for the buyer group
         group_unfulfilled_order_count INTEGER, -- orders for buyer group that were unfulfilled in the past
@@ -413,7 +415,6 @@ prompts = ['''
         last_ordered_date DATE, -- date when the last order was placed by this group
         coa_required BOOLEAN, -- is COA certificate required or not for the buyer
         last_buyer_app_usage_days_ago INTEGER, -- the number of days since the buyer last used the app
-        payment_reminders INTEGER, 
         mobile_app_enabled BOOLEAN, -- mobile app enabled for the buyer or not
         supplier_payment_terms TEXT, -- payment terms selected by the supplier
         order_priority VARCHAR(10) CHECK (order_priority IN (
@@ -549,10 +550,10 @@ prompts = ['''
         grade_group TEXT, -- grade group that was ordered in this order
         pan VARCHAR(10), -- PAN card of the associated buyer 
         total_mapped_qty DECIMAL(10,2), -- mapped dgft input
-        last_6mnt_lowest_not_adjusted DECIMAL(10,2), -- last 6 months lowest not adjusted price
-        last_6mnt_lowest_not_adjusted_order_no TEXT, -- order number of last 6 months lowest not adjusted price
-        last_6mnt_lowest_adjusted DECIMAL(10,2), -- last 6 months lowest adjusted price
-        last_6mnt_lowest_adjusted_order_no TEXT, -- order number of last 6 months lowest adjusted price
+        last_6mnt_lowest_not_adjusted DECIMAL(10,2), -- this refers to the lowest freight that was paid for godown to delivery location in the last 6 months.
+        last_6mnt_lowest_not_adjusted_order_no TEXT, -- order number that had the lowest freight in the last 6 month for the godown and delivery location 
+        last_6mnt_lowest_adjusted DECIMAL(10,2), -- this refers to the lowest freight that was paid for parent location of godown to parent location of delivery location in last 6 months.
+        last_6mnt_lowest_adjusted_order_no TEXT, -- order number of the lowest freight that was paid from parent location of godown to parent location of delivery location in last 6 months.
         godown_parent_name TEXT, -- name of the parent location of the godown location 
         destination_parent_name TEXT, -- name of the parent location of the delivery destination
         app_live_price DECIMAL(10,2), -- live price on buyer app of the selected grade during the time of purchase
@@ -568,7 +569,6 @@ prompts = ['''
         change_time TIMESTAMP, -- time at which order was changed
         probable_supplier_group_id TEXT, -- id of possible suppliers for the order
         probable_supplier_group_name TEXT, -- name of possible suppliers for the order
-        is_available boolean, 
         buyer_type VARCHAR(30) CHECK (buyer_type IN (
             'REGULAR BUYER',
             '0-1 BUYER',
@@ -604,6 +604,9 @@ prompts = ['''
     
     For any column related to date, always pick the current year if year is not mentioned.
     convert the timestamps to date for comparing with dates based on the question.
+
+    For all the state related queries, refer to indian states like -- 
+    and examples of state abbreviation and state short forms are 
 
            
     For example:
