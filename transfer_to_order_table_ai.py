@@ -57,7 +57,7 @@ last_runtime = last_runtime-(2*60*1000)
 # print(last_runtime)
 
 
-order_table = text("SELECT * FROM order_table_superset WHERE updatedat > :last_runtime")
+order_table = text("SELECT * FROM order_table_superset ")
 
 with engine.connect() as connection:
     order_table = pd.read_sql(order_table, connection, params={"last_runtime": last_runtime})
@@ -293,7 +293,9 @@ else:
         'availability': 'is_available',
         'buyerType': 'buyer_type',
         'companygst': 'company_gst',
-        'ordercreatedby': 'order_created_by'
+        'ordercreatedby': 'order_created_by',         
+        'buyerthresholdpaymentdate':'buyer_threshold_payment_date',
+        'supplierthresholdpaymentdate': 'supplier_threshold_payment_date'
     }
         
 
@@ -441,6 +443,17 @@ else:
                     return datetime.datetime.strptime(value, '%Y-%m-%d').date()
                 except ValueError:
                     raise ValueError(f"Invalid date format for column {column_name}: {value}")
+        
+        if column_name in [ 'buyer_threshold_payment_date', 'supplier_threshold_payment_date']:
+           if value.strip() == '0' or value.strip() == '0.0' or value.strip() == 'NA':
+            return None
+           try:
+            return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S').date()
+           except ValueError:
+             try:
+                return datetime.datetime.strptime(value, '%Y-%m-%d').date()
+             except ValueError:
+                raise ValueError(f"Invalid date format for column {column_name}: {value}")
         
         # Other date conversions
         if column_name.endswith('_date') or column_name in ['buyer_due_date', 'eway_bill_expiry_date']:
@@ -787,6 +800,8 @@ else:
         Column('load_amount', Integer),
         Column('freight_offset', DECIMAL(10, 2)),
         Column('max_dispatch_date', Date),
+        Column('buyer_threshold_payment_date', Date),
+        Column('supplier_threshold_payment_date', Date),
         Column('min_dispatch_date', Date),
         Column('last_order_days_ago', Integer),
         Column('group_name', Text),

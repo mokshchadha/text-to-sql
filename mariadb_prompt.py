@@ -24,6 +24,8 @@ prompts = ['''
         dispatch_date DATE, -- date on which order was dispatched from the godown location to delivery location
         due_date DATE, -- due date for the order as per the generated Invoice, this value does not change with time
         buyer_due_date DATE, -- due date of the order for the buyer this value changes and is used to trigger payment reminders
+        buyer_threshold_payment_date DATE, -- This refers to the date when we have received 80% payment from the buyer for the order, threshold payment refers to 80 percent of the payment being done
+        supplier_threshold_payment_date DATE, -- This refers to the date when we have made 80% payment to the supplier for the order, threshold payment refers to 80 percent of the payment being done
         expected_delivery_date DATE, -- date on which vehicle was supposed to reach the destination when order was created
         actual_delivery_date DATE, --  date on which vehicle was actually reached and marked as delivered by team in admin console
         supplier_due_date DATE, -- date on which payment is supposed to be made to the supplier.

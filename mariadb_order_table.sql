@@ -22,6 +22,8 @@ CREATE TABLE order_table_ai (
     delivery_state_abbreviation VARCHAR(3), -- state abbreviation in which the buyer location i.e. delivery location is located
     dispatch_date DATE, -- date of dispatch of the order
     due_date DATE, -- due date for the order
+    buyer_threshold_payment_date DATE, -- This refers to the date when we have received 80% payment from the buyer for the order, threshold payment refers to 80% of the payment being done
+    supplier_threshold_payment_date DATE, -- This refers to the date when we have made 80% payment to the supplier for the order, threshold payment refers to 80% of the payment being done
     buyer_due_date DATE, -- due date of the order for the buyer
     expected_delivery_date DATE, -- expected date of delivery by internal calculations
     actual_delivery_date DATE, -- actual date on which order was delivered

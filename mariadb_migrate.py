@@ -230,7 +230,9 @@ COLUMN_MAPPING = {
     'is_available': 'availability',
     'buyer_type': 'buyerType',
     'company_gst': 'companygst',
-    'order_created_by': 'ordercreatedby'
+    'order_created_by': 'ordercreatedby',
+    'buyer_threshold_payment_date':'buyerthresholdpaymentdate',
+    'supplier_threshold_payment_date':'supplierthresholdpaymentdate'
 }
 
 
@@ -371,6 +373,17 @@ def convert_to_database_type(value, column_name):
 
     if column_name in [ 'last_ordered_date', 'min_dispatch_date', 'max_dispatch_date']:
         if value.strip() == '0' or value.strip() == '0.0':
+            return None
+        try:
+            return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S').date()
+        except ValueError:
+            try:
+                return datetime.datetime.strptime(value, '%Y-%m-%d').date()
+            except ValueError:
+                raise ValueError(f"Invalid date format for column {column_name}: {value}")
+
+    if column_name in [ 'buyer_threshold_payment_date', 'supplier_threshold_payment_date']:
+        if value.strip() == '0' or value.strip() == '0.0' or value.strip() == 'NA':
             return None
         try:
             return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S').date()
