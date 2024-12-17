@@ -57,7 +57,7 @@ last_runtime = last_runtime-(2*60*1000)
 # print(last_runtime)
 
 
-order_table = text("SELECT * FROM order_table_superset ")
+order_table = text("SELECT * FROM order_table_superset")
 
 with engine.connect() as connection:
     order_table = pd.read_sql(order_table, connection, params={"last_runtime": last_runtime})
@@ -295,6 +295,10 @@ else:
         'companygst': 'company_gst',
         'ordercreatedby': 'order_created_by',         
         'buyerthresholdpaymentdate':'buyer_threshold_payment_date',
+        'destinationState':'delivery_state',
+        'godownState':'godown_state',
+        'godownState_abbreviation':'godown_state_abbreviation',
+        'destinationState_abbreviation':'delivery_state_abbreviation',
         'supplierthresholdpaymentdate': 'supplier_threshold_payment_date'
     }
         
@@ -361,6 +365,11 @@ else:
         value = str(value)
         if value in ['', 'N/A', 'NA', 'na', 'nan', 'null', 'NULL', 'None', '0.0'] or value.strip() == '':
             return None
+
+        if column_name in ['delivery_state', 'godown_state','godown_state_abbreviation', 'delivery_state_abbreviation']:
+            if value is None or value.strip() == '0':
+                return None
+            return value.strip()
 
         if column_name in ['is_parent', 'is_split']:
             if value is None:
@@ -696,6 +705,10 @@ else:
         Column('supplier_gst', String(15)),
         Column('supplier_name', Text),
         Column('buyer_gst', String(15)),
+        Column('godown_state_abbreviation', String(5)),
+        Column('delivery_state_abbreviation', String(5)),
+        Column('godown_state', String(50)),
+        Column('delivery_state', String(50)),
         Column('buyer_name', Text),
         Column('godown_id', String(24)),
         Column('godown_name', String(30)),
