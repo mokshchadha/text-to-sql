@@ -9,8 +9,19 @@ from dotenv import load_dotenv
 import math
 from typing import Dict, Any, Tuple, Optional
 
+# Set page config at the very beginning
+st.set_page_config(page_title="Pippin-GPT")
+
+# Load environment variables
+load_dotenv()
+print(os.getenv('GOOGLE_API_KEY'))
+
 # Configure Google Generative AI
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+api_key = st.secrets["GOOGLE_API_KEY"] if "GOOGLE_API_KEY" in st.secrets else os.getenv("GOOGLE_API_KEY")
+if not api_key:
+    st.error("Google API Key not found. Please set it in Streamlit secrets or as an environment variable.")
+else:
+    genai.configure(api_key=api_key)
 
 def get_gemini_response(question, prompts):
     model = genai.GenerativeModel('gemini-1.5-pro')
@@ -30,18 +41,39 @@ DB_CONFIG = {
 META_PROMPT = '''
 You are an expert in converting English questions to SQL queries, working for Pippin Title
 And you have the access to tracker-related information for the company ITC you only generate SELECT query do not generate DELETE, ALTER, DROP or TRUNCATE queries
-The MySQL database has a table named tracker_responses with the following structure:
-CREATE TABLE IF NOT EXISTS tracker_responses (
-    s_no INT AUTO_INCREMENT PRIMARY KEY,
-    submitted_time TIMESTAMP,
-    tl TEXT,
-    ds TEXT,
-    outlet_name TEXT,
-    soh INT,
-    number_of_packets INT
+The MySQL database has a table named Order_Property_User_View with the following structure:
+
+CREATE TABLE IF NOT EXISTS Order_Property_User_View (
+    Order_ID INT AUTO_INCREMENT PRIMARY KEY, -- the unique id for each order 
+    Order_Creation_Date TIMESTAMP, -- the date on which order was created
+    Order_Completion_Date TIMESTAMP, -- the date on which order is marked as completed
+    Order_Status INT --  The orderStatus column represents the current status of an order within the workflow of the system. It stores integer values that correspond to predefined status codes, each signifying a specific stage in the order lifecycle.
+                         The possible values and their meanings are:
+                        1 (received): The order has been received in the system.
+                        10 (cancelled): The order has been cancelled and will not proceed further.
+                        15 (assigned): The order has been assigned to a team or individual for processing.
+                        18 (clientconf): The client has confirmed the details of the order.
+                        20 (confirmed): The order has been fully confirmed and is ready for processing.
+                        30 (processing): The order is actively being processed.
+                        40 (quotecompleted): The quote for the order has been completed.
+                        50 (completed): The order has been fully processed and completed.
+                        60 (forwarded): The order has been forwarded to the next stage or party.
+                        0 (inActive): The order is inactive and not currently in progress.
+    Order_Escalated INT -- if the order was escalted it is 1 otherwise 0
+    
+    Property_Creation_Date TIMESTAMP, -- the date on which the property associated with the order was created in pippin system
+    Property_First_Name Varchar(255), 
+    Property_Last_Name Varchar(255),
+    Property_City Varchar(255),
+    Property_Status Varchar(255),
+    Property_ZipCode Varchar(255), 
+
+    Organization_Name Varchar(255), -- organisation for which the order is created 
+    Organization_Status INT, -- it is 1 if the organisation is active -1 or 0 if it is inactive
+    Organization_Description Varchar(255), -- details about the organisation
 );
 
-Make sure you only return executable sql and no extra information 
+Make sure you only return executable sql and no extra information with a default added LIMIT 100
 The SQL code should not have ``` in the beginning or end and should not include the word 'sql' in the output.
 '''
 
@@ -100,11 +132,10 @@ class StreamlitApp:
                 st.session_state[key] = value
 
     def setup_page(self):
-        st.set_page_config(page_title="Pippin-GPT")
-         # Create a header with an image and title
+        # Create a header with an image and title
         col1, col2 = st.columns([1, 5])  # Adjust the proportions as needed
         with col1:
-            st.image("https://i.ibb.co/DggwwDk/logo-new-pippin.png", width=80)  # Replace with the actual path to your image and adjust width if necessary
+            st.image("https://i.ibb.co/DggwwDk/logo-new-pippin.png", width=80)
         with col2:
             st.header("Pippin Title Data Analytics")
         self.show_preview = st.toggle("Enable Preview", value=True)
