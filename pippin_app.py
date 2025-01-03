@@ -14,7 +14,6 @@ st.set_page_config(page_title="Pippin-GPT")
 
 # Load environment variables
 load_dotenv()
-print(os.getenv('GOOGLE_API_KEY'))
 
 # Configure Google Generative AI
 api_key = st.secrets["GOOGLE_API_KEY"] if "GOOGLE_API_KEY" in st.secrets else os.getenv("GOOGLE_API_KEY")
