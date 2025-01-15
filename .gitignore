@@ -171,3 +171,6 @@ order_table_superset.csv
 .streamlit/secrets.toml
 
 .vscode
+
+clickhouse/chatapp_events.csv
+clickhouse/content_table.csv
