@@ -174,3 +174,9 @@ order_table_superset.csv
 
 clickhouse/chatapp_events.csv
 clickhouse/content_table.csv
+
+
+starrocks/chatapp_events.csv
+starrocks/content_table.csv
+starrocks/data/*
+starrocks/log/*
