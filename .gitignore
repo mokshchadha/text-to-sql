@@ -180,3 +180,8 @@ starrocks/chatapp_events.csv
 starrocks/content_table.csv
 starrocks/data/*
 starrocks/log/*
+
+duckdb/chatapp_events.csv
+duckdb/content_table.csv
+duckdb/chat_events.duckdb
+duckdb/chat_events.duckdb.wal
