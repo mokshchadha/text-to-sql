@@ -76,3 +76,7 @@ DISTINCT operation took: 2.6855 seconds
         ORDER BY usage_count DESC
         LIMIT 10
         
+=== Apache Flink === 
+DuckDB doesn't have direct Apache Flink support like ClickHouse does.
+There are other ways like python data stream
+DuckDB-Wasm with Arrow Streaming
