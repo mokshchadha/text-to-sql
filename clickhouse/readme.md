@@ -63,3 +63,9 @@ Official Flink ClickHouse Connector is available
     GROUP BY tag
     ORDER BY usage_count DESC
     LIMIT 10
+
+=== time to insert / size 5 million records ==== 
+Created at: 2024-06-02 14:58:50
+Completed at: 2024-06-10 14:04:27
+Completion time (seconds): 687937
+Size -- 996 mb

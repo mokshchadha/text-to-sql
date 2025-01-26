@@ -185,3 +185,5 @@ duckdb/chatapp_events.csv
 duckdb/content_table.csv
 duckdb/chat_events.duckdb
 duckdb/chat_events.duckdb.wal
+duckdb/orders.duckdb
+duckdb/orders.duckdb.wal
