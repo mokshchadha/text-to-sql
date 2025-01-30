@@ -96,7 +96,7 @@ try:
         return orders
 
     # Insert data in batches
-    total_records = 5_000_000
+    total_records = 50_000_000
     batch_size = 10000
     num_batches = total_records // batch_size
 

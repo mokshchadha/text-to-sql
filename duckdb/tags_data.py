@@ -88,7 +88,7 @@ try:
         return list(zip(order_nos, tags, created_dates, completed_dates))
 
     # Insert data in larger batches with transaction control
-    total_records = 5_000_000
+    total_records = 50_000_000
     batch_size = 10000  # Increased batch size
     num_batches = total_records // batch_size
 
