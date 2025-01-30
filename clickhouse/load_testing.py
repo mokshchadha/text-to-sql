@@ -216,7 +216,7 @@ if __name__ == "__main__":
     test_aggregation_performance()
     test_array_search_performance()
     test_distinct_performance()
-    test_partitioning()
+    # test_partitioning()
     
     print("\n=== Array Search Query Examples ===")
     print("""
