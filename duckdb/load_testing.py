@@ -265,7 +265,7 @@ def test_p90_performance(conn):
     results = {}
     for query_name, query in test_queries.items():
         print(f"\nTesting P90 for: {query_name}")
-        p90_time, _, stats = calculate_p90_execution_time(conn, query, iterations=500)
+        p90_time, _, stats = calculate_p90_execution_time(conn, query, iterations=100)
         
         if p90_time and stats:
             print(f"""
