@@ -184,6 +184,103 @@ def test_distinct_performance(conn):
     print(f"DISTINCT tags count: {result[0][0]}")
     print(f"DISTINCT operation took: {execution_time:.4f} seconds")
 
+def calculate_p90_execution_time(conn, query, iterations=100):
+    """
+    Calculate P90 execution time for a given query
+    
+    Parameters:
+    conn: DuckDB connection
+    query: Query to test
+    iterations: Number of times to run the query (default 100)
+    
+    Returns:
+    tuple: (p90_time, execution_times, stats_dict)
+    """
+    execution_times = []
+    print(f"\nRunning query {iterations} times to calculate P90...")
+    
+    try:
+        for i in range(iterations):
+            start_time = time.time()
+            conn.execute(query).fetchall()
+            execution_time = time.time() - start_time
+            execution_times.append(execution_time)
+            
+            # Print progress every 10 iterations
+            if (i + 1) % 10 == 0:
+                print(f"Completed {i + 1}/{iterations} iterations")
+        
+        # Calculate P90 and other statistics using DuckDB
+        times_query = f"""
+        WITH times AS (
+            SELECT UNNEST({execution_times}) as exec_time
+        )
+        SELECT 
+            QUANTILE(exec_time, 0.9) as p90,
+            MIN(exec_time) as min_time,
+            MAX(exec_time) as max_time,
+            AVG(exec_time) as mean_time,
+            STDDEV(exec_time) as std_dev
+        FROM times
+        """
+        stats = conn.execute(times_query).fetchone()
+        
+        stats_dict = {
+            'p90': stats[0],
+            'min_time': stats[1],
+            'max_time': stats[2],
+            'mean_time': stats[3],
+            'std_dev': stats[4]
+        }
+        
+        return stats[0], execution_times, stats_dict
+        
+    except Exception as e:
+        print(f"Error calculating P90: {e}")
+        return None, None, None
+
+def test_p90_performance(conn):
+    """Test P90 performance for different query types"""
+    print("\n=== P90 Performance Tests ===")
+    
+    test_queries = {
+        "Simple Count": "SELECT COUNT(*) FROM orders",
+        "Filtered Count": "SELECT COUNT(*) FROM orders WHERE created_at > '2023-06-01'",
+        "Array Search": """
+            SELECT COUNT(*)
+            FROM orders
+            WHERE list_contains(tags, 'priority_1')
+        """,
+        "Complex Aggregation": """
+            SELECT 
+                strftime(created_at, '%Y%m') as month,
+                COUNT(*) as count
+            FROM orders 
+            WHERE array_length(array_intersect(tags, ['priority_1', 'status_2'])) > 0
+            GROUP BY month
+            ORDER BY month
+        """
+    }
+    
+    results = {}
+    for query_name, query in test_queries.items():
+        print(f"\nTesting P90 for: {query_name}")
+        p90_time, _, stats = calculate_p90_execution_time(conn, query, iterations=500)
+        
+        if p90_time and stats:
+            print(f"""
+Performance Statistics for {query_name}:
+- P90 Time:          {stats['p90']:.4f} seconds
+- Minimum Time:      {stats['min_time']:.4f} seconds
+- Maximum Time:      {stats['max_time']:.4f} seconds
+- Mean Time:         {stats['mean_time']:.4f} seconds
+- Standard Deviation: {stats['std_dev']:.4f} seconds
+            """)
+            results[query_name] = stats
+
+    return results
+
+
 def run_all_tests():
     try:
         print("Starting DuckDB Performance Analysis...")
@@ -199,6 +296,11 @@ def run_all_tests():
         test_aggregation_performance(conn)
         test_array_search_performance(conn)
         test_distinct_performance(conn)
+        p90_results = test_p90_performance(conn)
+        
+        print("\n=== P90 Performance Summary ===")
+        for query_name, stats in p90_results.items():
+            print(f"{query_name}: P90 = {stats['p90']:.4f} seconds")
         
         print("\n=== Array Search Query Examples ===")
         print("""

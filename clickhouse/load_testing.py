@@ -1,6 +1,7 @@
 from clickhouse_driver import Client
 import time
 from datetime import datetime, timedelta
+import numpy as np
 
 # Connection settings
 client = Client(
@@ -206,6 +207,103 @@ def test_partitioning():
     
     client.execute('DROP TABLE orders_partitioned')
 
+
+def calculate_p90_execution_time(query, iterations=100):
+    """
+    Calculate P90 execution time for a given query
+    
+    Parameters:
+    query: Query to test
+    iterations: Number of times to run the query (default 100)
+    
+    Returns:
+    tuple: (p90_time, execution_times, stats_dict)
+    """
+    execution_times = []
+    print(f"\nRunning query {iterations} times to calculate P90...")
+    
+    try:
+        for i in range(iterations):
+            start_time = time.time()
+            client.execute(query)
+            execution_time = time.time() - start_time
+            execution_times.append(execution_time)
+            
+            # Print progress every 10 iterations
+            if (i + 1) % 10 == 0:
+                print(f"Completed {i + 1}/{iterations} iterations")
+        
+        # Calculate statistics using ClickHouse
+        times_array = str(execution_times)  # Convert list to string representation
+        stats_query = f"""
+        WITH 
+            arrayMap(x -> toFloat64(x), {times_array}) AS times
+        SELECT
+            quantile(0.9)(times) as p90,
+            min(times) as min_time,
+            max(times) as max_time,
+            avg(times) as mean_time,
+            stddevPop(times) as std_dev
+        FROM (SELECT times)
+        """
+        stats = client.execute(stats_query)[0]
+        
+        stats_dict = {
+            'p90': stats[0],
+            'min_time': stats[1],
+            'max_time': stats[2],
+            'mean_time': stats[3],
+            'std_dev': stats[4]
+        }
+        
+        return stats[0], execution_times, stats_dict
+        
+    except Exception as e:
+        print(f"Error calculating P90: {e}")
+        return None, None, None
+
+def test_p90_performance():
+    """Test P90 performance for different query types"""
+    print("\n=== P90 Performance Tests ===")
+    
+    test_queries = {
+        "Simple Count": "SELECT COUNT(*) FROM orders",
+        "Filtered Count": "SELECT COUNT(*) FROM orders WHERE created_at > '2023-06-01'",
+        "Array Search": """
+            SELECT COUNT(*)
+            FROM orders
+            WHERE has(tags, 'priority_1')
+        """,
+        "Complex Aggregation": """
+            SELECT 
+                toYYYYMM(created_at) as month,
+                COUNT(*) as count
+            FROM orders 
+            WHERE hasAny(tags, ['priority_1', 'status_2'])
+            GROUP BY month
+            ORDER BY month
+        """
+    }
+    
+    results = {}
+    for query_name, query in test_queries.items():
+        print(f"\nTesting P90 for: {query_name}")
+        p90_time, _, stats = calculate_p90_execution_time(query, iterations=50)
+        
+        if p90_time and stats:
+            print(f"""
+Performance Statistics for {query_name}:
+- P90 Time:          {stats['p90']:.4f} seconds
+- Minimum Time:      {stats['min_time']:.4f} seconds
+- Maximum Time:      {stats['max_time']:.4f} seconds
+- Mean Time:         {stats['mean_time']:.4f} seconds
+- Standard Deviation: {stats['std_dev']:.4f} seconds
+            """)
+            results[query_name] = stats
+
+    return results
+
+
 # Run all tests
 if __name__ == "__main__":
     print("Starting ClickHouse Performance Analysis...")
@@ -217,6 +315,11 @@ if __name__ == "__main__":
     test_array_search_performance()
     test_distinct_performance()
     # test_partitioning()
+    p90_results = test_p90_performance()
+        
+    print("\n=== P90 Performance Summary ===")
+    for query_name, stats in p90_results.items():
+        print(f"{query_name}: P90 = {stats['p90']:.4f} seconds")
     
     print("\n=== Array Search Query Examples ===")
     print("""
