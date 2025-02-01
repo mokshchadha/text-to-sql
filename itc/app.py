@@ -32,7 +32,9 @@ CREATE TABLE IF NOT EXISTS tracker_responses (
     soh INTEGER,
     number_of_packets INTEGER
 );
-
+tl stands for TEAM LEAD
+ds stands for DISTRIBUTION Center
+soh stands for NUMBER of SAFE HOUSES
 Make sure you only return executable sql and no extra information 
 The SQL code should not have ``` in the beginning or end and should not include the word 'sql' in the output.
 '''
