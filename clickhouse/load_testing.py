@@ -2,6 +2,7 @@ from clickhouse_driver import Client
 import time
 from datetime import datetime, timedelta
 import numpy as np
+import pandas as pd 
 
 # Connection settings
 client = Client(
@@ -210,7 +211,7 @@ def test_partitioning():
 
 def calculate_p90_execution_time(query, iterations=100):
     """
-    Calculate P90 execution time for a given query
+    Calculate P90 execution time for a given query using pandas
     
     Parameters:
     query: Query to test
@@ -233,35 +234,23 @@ def calculate_p90_execution_time(query, iterations=100):
             if (i + 1) % 10 == 0:
                 print(f"Completed {i + 1}/{iterations} iterations")
         
-        # Calculate statistics using ClickHouse
-        times_array = str(execution_times)  # Convert list to string representation
-        stats_query = f"""
-        WITH 
-            arrayMap(x -> toFloat64(x), {times_array}) AS times
-        SELECT
-            quantile(0.9)(times) as p90,
-            min(times) as min_time,
-            max(times) as max_time,
-            avg(times) as mean_time,
-            stddevPop(times) as std_dev
-        FROM (SELECT times)
-        """
-        stats = client.execute(stats_query)[0]
+        # Convert to pandas Series for easy statistics calculation
+        import pandas as pd
+        times_series = pd.Series(execution_times)
         
         stats_dict = {
-            'p90': stats[0],
-            'min_time': stats[1],
-            'max_time': stats[2],
-            'mean_time': stats[3],
-            'std_dev': stats[4]
+            'p90': times_series.quantile(0.9),
+            'min_time': times_series.min(),
+            'max_time': times_series.max(),
+            'mean_time': times_series.mean(),
+            'std_dev': times_series.std()
         }
         
-        return stats[0], execution_times, stats_dict
+        return stats_dict['p90'], execution_times, stats_dict
         
     except Exception as e:
         print(f"Error calculating P90: {e}")
         return None, None, None
-
 def test_p90_performance():
     """Test P90 performance for different query types"""
     print("\n=== P90 Performance Tests ===")
